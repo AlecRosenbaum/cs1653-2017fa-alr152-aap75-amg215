@@ -1,2 +1,2 @@
 # CS1653
-Holds out work on 1653 projects.
+Holds our work on 1653 projects.
