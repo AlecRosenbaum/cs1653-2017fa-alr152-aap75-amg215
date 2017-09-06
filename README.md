@@ -1,2 +1,6 @@
 # CS1653
-Holds our work on 1653 projects.
+
+## Team
+
+* Alec Rosenbaum, alr152, 3886296
+* 
