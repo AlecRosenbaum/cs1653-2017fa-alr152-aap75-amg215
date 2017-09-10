@@ -8,7 +8,9 @@
 * Alex George 
     - amg215@pitt.edu
     - alexgeorge222
-
+* Aadu Pirn
+    - aap75@pitt.edu
+    - aadupirn
 
 ## Security Properties
 
@@ -24,8 +26,11 @@
 * **System Availability:** System Availability states that any user *u* should be able to access an authorized file *f* at any time, and users must be notified of any upcoming downtime for  something such as system maintenance with a reasonable warning time.  This is to ensure that information can be accessed as expected.  
 * **Server Port Firewall:** Server Port Firewall states that the only ports open for communication on File Servers will be used for the file sharing application. This requirement prevents unauthorized access to the system through exploiting weaknesses in other applications.
 * **IP Firewall:** IP Firewall states that a firewall run on file servers will block any non-whitelisted IP addresses (or IP-ranges). This requirement prevents any access to the server from outside of a pre-approved network. 
-
-
+* **File Confidentiality:** File Confidentiality states that stored files will be stored in such a way that if they are found by an unauthenticated user or any other entity that the contents or any information about the file is unable to be perceived without having access to a user account that has access to the files. This prevents unauthorized viewing of sensitive content. 
+* **User Confidentiality:** User Confidentiality states that users not engaged in a transaction will not be able to tell which users are accessing which files. They might be able to see that network communication is happening but not who is doing the communication and what they are accessing. The prevents malicious entities from gaining information about user patterns or file importance.
+* **Group Member Confidentiality:** Group Confidentiality states that users not in a group are not able to perceive information about the group such as number of users in the group or the identity of the users. This prevents malicious users from finding private information or the purpose of different groups.
+* **Group Secrecy:** Group secrecy states that a groups existence is not known and unable to be perceived by users not included in the groups. Without this requirement unapproved users might be able to gather group or user intentions just though the knowledge of group existense.
+* **File System Secrecy:** File secrecy states that a user should be unable to percieve any informormation or the existence of files that the user does not have the authentication to view. If users are able to see the existence of other files they would be able to make assumptions about their contents and the file sharing patterns of other users.
 
 ## Threat Models
 
@@ -51,6 +56,27 @@ Though servers on this network are internet-connected, incoming traffic will onl
     - Communication will be occurring using (relatively) public channels. Any data sent over these channels should not be visible to any unauthorized third-party.
 
 
+### International Knowledge Sharing Network
+
+#### System Model
+
+This system would allow scientists and engineers from different countries to share knowledge and data with each other. Servers will be accessible from anywhere while government entities will provide user accounts to individuals each country deems appropriate. Groups are created via agreements between countries and users from the respective countries can be approved for group access. 
+
+#### Assumption
+
+Users in this system can only be trusted with information they are approved to view. If the USA and Canada have a research agreement any Chinese users should never be allowed to see group or file information for the USA-Canada group files. Users of unapproved countries cannot be trusted not to attempt to view unauthorized files.
+
+#### Security Properties
+
+* File System Secrecy
+    - Agents of other foreign countries should not be able to know any information about files shared that they don't have access to. Even their existence. 
+* Group Member Confidentiality
+    - Agents of other foreign countries should not be able to know when countries other than their own are engaged in any sort of sharing if their country is not included in a sharing group.
+* Transmission Integrity
+    - As this system is primarily used to share scientific and specific data it is important that that data not be corrupted so that correct assumptions can be made using the data.
+* User Addition Authorization
+    - It is important in this system that unapproved users never gain access. The only way to gain access to this system at all should be through the country the user is representing which will provide credentials.
+
 ### Government Inter-Agency File Share
 
 #### System Model
@@ -71,5 +97,3 @@ Servers will be internet connected in order to maintain access across offices an
     - Due to the high importance of some information, files must be able to be accessed at any time by authorized users.  Any downtime for system updates must be given a two-week notice with no more than two hours without system access.
 * Group Management
     - In order to maintain file confidentiality, users must be placed into groups that allows them access to the files that should be relevant to their position and security clearance.
-
-## References
