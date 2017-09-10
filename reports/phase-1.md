@@ -4,7 +4,7 @@
 
 * Alec Rosenbaum
     - alr152@pitt.edu
-    - alecr95
+    - alecrosenbaum
 
 ## Security Properties
 
