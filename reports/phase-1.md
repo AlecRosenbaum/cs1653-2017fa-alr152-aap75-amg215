@@ -3,8 +3,12 @@
 ## Group Information
 
 * Alec Rosenbaum
-    - alr152@pitt.edu
-    - alecrosenbaum
+    - email: alr152@pitt.edu
+    - github: alecrosenbaum
+
+* Aadu Pirn
+    - email: aap75@pitt.edu
+    - github: aadupirn
 
 ## Security Properties
 
