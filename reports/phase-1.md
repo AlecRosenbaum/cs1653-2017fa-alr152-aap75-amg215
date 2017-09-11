@@ -107,5 +107,5 @@ Servers will be internet connected in order to maintain access across offices an
     - This ensures that only employees of the government will be allowed access to the system.
 * System Availability
     - Due to the high importance of some information, files must be able to be accessed at any time by authorized users. Any downtime for system updates must be given a two-week notice with no more than two hours without system access.
-* Group Management
+* Group Member Confidentiality
     - In order to maintain file confidentiality, users must be placed into groups that allows them access to the files that should be relevant to their position and security clearance.
