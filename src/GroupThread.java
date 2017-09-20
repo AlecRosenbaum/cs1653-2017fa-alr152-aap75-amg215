@@ -111,6 +111,30 @@ public class GroupThread extends Thread
 				else if(message.getMessage().equals("CGROUP")) //Client wants to create a group
 				{
 				    /* TODO:  Write this handler */
+				    if(message.getObjContents().size() < 2)
+					{
+						response = new Envelope("FAIL");
+					}
+					else
+					{
+						response = new Envelope("FAIL");
+						
+						if(message.getObjContents().get(0) != null)
+						{
+							if(message.getObjContents().get(1) != null)
+							{
+								String groupname = (String)message.getObjContents().get(0); //Extract the groupname
+								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+								
+								if(createGroup(groupname, yourToken))
+								{
+									response = new Envelope("OK"); //Success
+								}
+							}
+						}
+					}
+					
+					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DGROUP")) //Client wants to delete a group
 				{
@@ -260,5 +284,60 @@ public class GroupThread extends Thread
 			return false; //requester does not exist
 		}
 	}
+
+	// method for creating groups
+	public boolean createGroup(String groupname, UserToken token) {
+		// TODO
+		String requester = token.getSubject();
+		
+		// //Check if requester exists
+		// if(my_gs.userList.checkUser(requester))
+		// {
+			
+		// 	// check if group exists
+		// 	if (my_gs.groups.contains(groupname)) {
+		// 		return false;
+		// 	} else {
+		// 		// add group to list
+		// 		my_gs.groups.add(groupname);
+
+		// 		// add group to user, make user owner of group
+
+		// 	}
+
+		// 	//Get the user's groups
+		// 	ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
+		// 	//requester needs to be an administrator
+		// 	if(temp.contains("ADMIN"))
+		// 	{
+		// 		//Does user already exist?
+		// 		if(my_gs.userList.checkUser(username))
+		// 		{
+		// 			return false; //User already exists
+		// 		}
+		// 		else
+		// 		{
+		// 			my_gs.userList.addUser(username);
+		// 			return true;
+		// 		}
+		// 	}
+		// 	else
+		// 	{
+		// 		return false; //requester not an administrator
+		// 	}
+		// }
+		// else
+		// {
+		// 	return false; //requester does not exist
+		// }
+
+		return false;
+	}
 	
+
+	public boolean deleteGroup(String group, UserToken token) {
+		// TODO
+
+		return false;
+	}
 }
