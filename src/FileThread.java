@@ -3,6 +3,7 @@
 import java.lang.Thread;
 import java.net.Socket;
 import java.util.List;
+import java.util.ArrayList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -39,7 +40,6 @@ public class FileThread extends Thread {
 						} else {
 							// token contains user, server, and groups
 							UserToken yourToken = (UserToken)e.getObjContents().get(2); //Extract token
-
 							
 							// check files for files in groups that user is a part of
 							ArrayList<String> fileNames = new ArrayList<String>();
@@ -51,7 +51,7 @@ public class FileThread extends Thread {
 
 							// respond with a list of files: List<String>
 							response = new Envelope("OK"); //Success
-							response.addObject(fileNames)
+							response.addObject(fileNames);
 							output.writeObject(response);
 						}
 					}

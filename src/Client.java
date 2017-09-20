@@ -16,8 +16,8 @@ public abstract class Client {
 
         try {
 
-            sock = new Socket(args[0], EchoServer.SERVER_PORT);
-            System.out.println("Connected to " + args[0] + " on port " + EchoServer.SERVER_PORT);
+            sock = new Socket(server, port);
+            System.out.println("Connected to " + server + " on port " + port);
 
             // Set up I/O streams with the server
             output = new ObjectOutputStream(sock.getOutputStream());

@@ -1,14 +1,15 @@
 import java.util.ArrayList;
 
 
-public class Token implements UserToken {
+public class Token implements java.io.Serializable, UserToken {
 
     /**
      *
      */
+    private static final long serialVersionUID = 234998633654324L;
     private String issuer;
     private String subject;
-    private ArrayList<Object> groups = new ArrayList<Object>();
+    private ArrayList<String> groups = new ArrayList<String>();
 
     // my_gs.name, subject, my_gs.userList.getUserGroups(subject)
     public Token(String issuer, String subject, ArrayList<String> groups) {
@@ -55,7 +56,7 @@ public class Token implements UserToken {
      * @return The list of group memberships encoded in this token
      *
      */
-    public List<String> getGroups() {
+    public ArrayList<String> getGroups() {
         return groups;
     }
 
