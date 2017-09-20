@@ -4,41 +4,52 @@ import java.io.ObjectOutputStream;
 
 public abstract class Client {
 
-	/* protected keyword is like private but subclasses have access
-	 * Socket and input/output streams
-	 */
-	protected Socket sock;
-	protected ObjectOutputStream output;
-	protected ObjectInputStream input;
+    /* protected keyword is like private but subclasses have access
+     * Socket and input/output streams
+     */
+    protected Socket sock;
+    protected ObjectOutputStream output;
+    protected ObjectInputStream input;
 
-	public boolean connect(final String server, final int port) {
-		System.out.println("attempting to connect");
+    public boolean connect(final String server, final int port) {
+        System.out.println("attempting to connect");
 
-		/* TODO: Write this method */
+        try {
 
-	}
+            sock = new Socket(args[0], EchoServer.SERVER_PORT);
+            System.out.println("Connected to " + args[0] + " on port " + EchoServer.SERVER_PORT);
 
-	public boolean isConnected() {
-		if (sock == null || !sock.isConnected()) {
-			return false;
-		}
-		else {
-			return true;
-		}
-	}
+            // Set up I/O streams with the server
+            output = new ObjectOutputStream(sock.getOutputStream());
+            input = new ObjectInputStream(sock.getInputStream());
 
-	public void disconnect()	 {
-		if (isConnected()) {
-			try
-			{
-				Envelope message = new Envelope("DISCONNECT");
-				output.writeObject(message);
-			}
-			catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-			}
-		}
-	}
+            // success!
+            return true;
+        } catch (Exception e) {
+            // oh no....
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace(System.err);
+            return false;
+        }
+    }
+
+    public boolean isConnected() {
+        if (sock == null || !sock.isConnected()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public void disconnect() {
+        if (isConnected()) {
+            try {
+                Envelope message = new Envelope("DISCONNECT");
+                output.writeObject(message);
+            } catch (Exception e) {
+                System.err.println("Error: " + e.getMessage());
+                e.printStackTrace(System.err);
+            }
+        }
+    }
 }
