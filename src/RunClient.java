@@ -1,4 +1,5 @@
-/* Driver program for FileSharing File Server */
+/* Driver program for Client */
+import java.util.ArrayList;
 
 public class RunClient {
     
@@ -49,14 +50,14 @@ public class RunClient {
         }
 
 
-        // create a group if it doesn't exist
-        
-
         // upload a file
-
+        // file_client.upload(".gitignore", "test", "ADMIN", mytoken);
 
         // list files
-
+        ArrayList<String> files = (ArrayList<String>)file_client.listFiles(mytoken);
+        for (String file: files) {
+            System.out.println("File: " + file);
+        }
 
         // teardown
         group_client.disconnect();

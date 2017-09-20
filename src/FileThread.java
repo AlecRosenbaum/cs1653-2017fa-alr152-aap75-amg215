@@ -39,7 +39,7 @@ public class FileThread extends Thread {
 							response = new Envelope("FAIL-BADTOKEN");
 						} else {
 							// token contains user, server, and groups
-							UserToken yourToken = (UserToken)e.getObjContents().get(2); //Extract token
+							UserToken yourToken = (UserToken)e.getObjContents().get(0); //Extract token
 							
 							// check files for files in groups that user is a part of
 							ArrayList<String> fileNames = new ArrayList<String>();
