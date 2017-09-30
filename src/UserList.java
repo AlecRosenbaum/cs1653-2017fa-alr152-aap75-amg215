@@ -43,6 +43,22 @@ import java.util.*;
 			return list.get(username).getOwnership();
 		}
 		
+		public synchronized ArrayList<String> getGroupMembers(String groupname)
+		{
+			ArrayList<String> groupmembers = new ArrayList<>(list.keySet());
+			ArrayList<User> groupUsers = new ArrayList<>(list.values());
+			ArrayList<String> listmembers = new ArrayList<>();
+			for(int i = 0; i < groupUsers.size(); i++) {
+				
+				if(groupUsers.get(i).getGroups().contains(groupname)) {
+					
+					listmembers.add(groupmembers.get(i));
+				}
+			}
+			
+			return listmembers;
+		}
+		
 		public synchronized void addGroup(String user, String groupname)
 		{
 			list.get(user).addGroup(groupname);

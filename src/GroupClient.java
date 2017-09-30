@@ -2,10 +2,43 @@
 
 import java.util.ArrayList;
 import java.util.List;
+import java.net.Socket;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public class GroupClient extends Client implements GroupClientInterface {
  
+	 private Socket userSocket;
+	 private ObjectInputStream input;
+	 private ObjectOutputStream output;
+	 
+	 public boolean connect(final String server, final int port){
+		 System.out.println("attempting to connect");
+		 try{
+			 
+			 userSocket = new Socket(server, port);
+			 output = new ObjectOutputStream(userSocket.getOutputStream());
+	         input = new ObjectInputStream(userSocket.getInputStream());
+			 return true;
+		 }
+		 catch (Exception e){
+			 
+			 System.err.println("Error: " + e.getMessage());
+			 return false;
+		 }
+		 
+	 }
+	 public void disconnect(){
+		 if (userSocket.isConnected()){
+			 try {
+	                Envelope message = new Envelope("DISCONNECT");
+	                output.writeObject(message);
+	            } catch (Exception e) {
+	                System.err.println("Error: " + e.getMessage());
+	                e.printStackTrace(System.err);
+	            } 
+		 }
+	 }
 	 public UserToken getToken(String username)
 	 {
 		try
@@ -57,6 +90,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 				message.addObject(token); //Add the requester's token
 				output.writeObject(message);
 			
+				
 				response = (Envelope)input.readObject();
 				
 				//If server indicates success, return true
@@ -64,6 +98,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 				{
 					return true;
 				}
+				
 				
 				return false;
 			}
