@@ -29,6 +29,7 @@ public class GroupServer extends Server {
 		super(_port, "ALPHA");
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void start() {
 		// Overwrote server.start() because if no user file exists, initial admin account needs to be created
 		
@@ -72,6 +73,32 @@ public class GroupServer extends Server {
 			System.out.println("Error reading from UserList file");
 			System.exit(-1);
 		}
+
+		//Open group file to get group list
+		try
+		{
+			FileInputStream fis = new FileInputStream(groupFile);
+			groupStream = new ObjectInputStream(fis);
+			groups = (ArrayList<String>)groupStream.readObject(); //This cast creates compiler warnings.
+		}
+		catch(FileNotFoundException e)
+		{
+			System.out.println("GroupList File Does Not Exist. Creating GroupList...");
+
+			//Create a new group list, add the ADMIN group (always present default).
+			groups = new ArrayList<String>();
+			groups.add("ADMIN");
+		}
+		catch(IOException e)
+		{
+			System.out.println("Error reading from GroupList file");
+			System.exit(-1);
+		}
+		catch(ClassNotFoundException e)
+		{
+			System.out.println("Error reading from GroupList file");
+			System.exit(-1);
+		}
 		
 		//Autosave Daemon. Saves lists every 5 minutes
 		AutoSave aSave = new AutoSave(this);
@@ -81,7 +108,7 @@ public class GroupServer extends Server {
 		//This block listens for connections and creates threads on new connections
 		try
 		{
-			
+						
 			final ServerSocket serverSock = new ServerSocket(port);
 			
 			Socket sock = null;
@@ -151,6 +178,17 @@ class AutoSave extends Thread
 				{
 					outStream = new ObjectOutputStream(new FileOutputStream("UserList.bin"));
 					outStream.writeObject(my_gs.userList);
+				}
+				catch(Exception e)
+				{
+					System.err.println("Error: " + e.getMessage());
+					e.printStackTrace(System.err);
+				}
+
+				try
+				{
+					outStream = new ObjectOutputStream(new FileOutputStream("GroupList.bin"));
+					outStream.writeObject(my_gs.groups);
 				}
 				catch(Exception e)
 				{
