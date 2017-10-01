@@ -1,5 +1,8 @@
 /* Driver program for Client */
 import java.util.ArrayList;
+import java.io.*;
+import java.util.*;
+
 
 public class RunClient {
     
@@ -16,6 +19,7 @@ public class RunClient {
         }
 
         // parse args
+		Scanner console = new Scanner(System.in);
         String group_server_url = args[0];;
         int group_server_port;
         String file_server_url = args[2];
@@ -45,11 +49,64 @@ public class RunClient {
             System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
         }
 
-        //Test Code in Here
-        if (args.length == 5 && args[5].equals("test")) {
+        //Client Code In Here
+        if (args.length != 5 || !args[4].equals("test")) {
+            System.out.print("Welcome to Aadu, Alec, and Alex's File Server.\n\n" +
+                "Connected to the Group Server at " + group_server_url + ":" + group_server_port + "\n" +
+                "Connected to the File Server at " + file_server_url + ":" + file_server_port + "\n" +
+                "Enter 'help' for help. \n\n" +
+                "Enter command: "
+            );
+            String input = console.next();
+            while(!input.toLowerCase().equals("exit")){
+                if(input.toLowerCase().equals("help")){
+                    System.out.print("These are the available commands: \n\n" +
+                        "File Server Commands:\n" +
+                        "\tfconnect [url] [port]\n" +
+                        "\t\tConnects to new file server.\n" +         
+                        "\tfdisconnect\n" +
+                        "\t\tDisconnects from current file server.\n" +           
+                        "\tlistfiles\n" +
+                        "\t\tLists file in current file server.\n" +       
+                        "\tupload [sourcefile] [destinationfile] [group]\n" +
+                        "\t\tUpload file to file server.\n" + 
+                        "\tdownload [sourcefile] [destinationfile]\n" +
+                        "\t\tDownload file from file server.\n" + 
+                        "\tdelete [filename]\n" +
+                        "\t\tDelete file from file server.\n" + 
+                        "\nGroup Server Commands\n" +
+                        "\tgconnect [url] [port]\n" +
+                        "\t\tConnects to new group server.\n" +                            
+                        "\tgdisconnect\n" +
+                        "\t\tDisconnects from current group server.\n" +                       
+                        "\tchangeuser [username]\n" +
+                        "\t\tChanges current user.\n" +                  
+                        "\tcreateuser [username]\n" +
+                        "\t\tCreates new user, does NOT switch to that user.\n" +
+                        "\tdeleteuser [username]\n" +
+                        "\t\tDeletes existing user.\n" +
+                        "\tcreategroup [groupname]\n" +
+                        "\t\tCreates new group.\n" +
+                        "\tdeletegroup [groupname]\n" +
+                        "\t\tDeletes an existing groups.\n" +
+                        "\taddgroupuser [username] [groupname]\n" +
+                        "\t\tAdds user to an existing group.\n" +
+                        "\tdeletegroupuser [username] [groupname]\n" +
+                        "\t\tDeletes user from a group.\n" +
+                        "\tlistmembers [groupname]\n" +
+                        "\t\tLists all users in given group.\n"
+                    );
+                }
+
+                System.out.print("Enter command: ");
+                input = console.next();
+            }
+        }
+        // Test Code In Here
+        else {
             // get a token
             System.out.println("Running Tests");
-            UserToken mytoken = group_client.getToken("alec");
+            UserToken mytoken = group_client.getToken("aadu");
             if (mytoken == null) {
                 System.out.println("Token creation unsucessful.");
             } else {
