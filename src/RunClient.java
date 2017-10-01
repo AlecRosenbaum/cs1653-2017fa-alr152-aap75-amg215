@@ -48,6 +48,7 @@ public class RunClient {
         } else {
             System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
         }
+        UserToken mytoken = group_client.getToken("aadu");
 
         //Client Code In Here
         if (args.length != 5 || !args[4].equals("test")) {
@@ -58,8 +59,11 @@ public class RunClient {
                 "Enter command: "
             );
             String input = console.next();
-            while(!input.toLowerCase().equals("exit")){
-                if(input.toLowerCase().equals("help")){
+            String [] inputArray = input.split(" ");
+            while(!inputArray[0].toLowerCase().equals("exit")){
+                boolean error = false;
+
+                if(inputArray[0].toLowerCase().equals("help")){
                     System.out.print("These are the available commands: \n\n" +
                         "File Server Commands:\n" +
                         "\tfconnect [url] [port]\n" +
@@ -70,7 +74,7 @@ public class RunClient {
                         "\t\tLists file in current file server.\n" +       
                         "\tupload [sourcefile] [destinationfile] [group]\n" +
                         "\t\tUpload file to file server.\n" + 
-                        "\tdownload [sourcefile] [destinationfile]\n" +
+                        "\tdownload [remotefile] [localfile]\n" +
                         "\t\tDownload file from file server.\n" + 
                         "\tdelete [filename]\n" +
                         "\t\tDelete file from file server.\n" + 
@@ -97,16 +101,232 @@ public class RunClient {
                         "\t\tLists all users in given group.\n"
                     );
                 }
+                else if(inputArray[0].toLowerCase().equals("fconnect")){
+                    try  {
+                        String url = inputArray[1];
+                        int port = Integer.parseInt(args[2]);
+                        FileClient new_file_client = new FileClient();
+                        if (new_file_client.connect(url, port)) {
+                            System.out.println("Connected to file server " + url + ":" + port);
+                            file_client = new_file_client;
+                            file_server_url = url;
+                            file_server_port = port;
+                        } else {
+                            System.out.println("Unable to connect to file server " + url + ":" + port);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("fdisconnect")){
+                    try  {
+                        file_client.disconnect();
+                        System.out.println("Disconnected");
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("listfiles")){
+                    try  {
+                        List<String> fileList = file_client.listFiles(mytoken);
+                        System.out.println("Files in " + file_server_url + ":" + file_server_port);
+                        for(String file : fileList) {
+                            System.out.println(file);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("upload")){
+                    try  {
+                        String localFile = inputArray[1];
+                        String remoteFile = inputArray[2];
+                        String groupName = inputArray[3];
+                        file_client.upload(localFile, remoteFile, groupName, mytoken);
+                        System.out.println("Uploaded " + localFile + " to " + remoteFile + ".");
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("download")){
+                    try  {
+                        String remoteFile = inputArray[1];
+                        String localFile = inputArray[1];
+                        file_client.download(remoteFile, localFile, mytoken);
+                        System.out.println("Downloaded " + remoteFile + " to " + localFile + ".");
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("delete")){
+                    try  {
+                        String file = inputArray[1];
+                        file_client.delete(file, mytoken);
+                        System.out.println("Deleted " + file);
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("gconnect")){
+                    try  {
+                        String url = inputArray[1];
+                        int port = Integer.parseInt(args[2]);
+                        GroupClient new_group_client = new GroupClient();
+                        if (new_group_client.connect(url, port)) {
+                            System.out.println("Connected to group server " + url + ":" + port);
+                            group_client = new_group_client;
+                            group_server_url = url;
+                            group_server_port = port;
+                        } else {
+                            System.out.println("Unable to connect to file server " + url + ":" + port);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("gdisconnect")){
+                    try  {
+                        group_client.disconnect();
+                        System.out.println("Disconnected");
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("changeuser")){
+                    try  {
+                        String userName = inputArray[1];
+                        UserToken newToken = group_client.getToken(userName);
+                        if(newToken == null)
+                        {
+                            error = true;
+                            System.out.println("Invalid user.");
+                        }
+                        else {
+                            System.out.println("Switched to user " + userName);
+                            mytoken = newToken;
+                        }
+
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("createuser")){
+                    try  {
+                        String userName = inputArray[1];
+                        group_client.createUser(userName, mytoken);
+                        System.out.println("Created user " + userName);
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("deleteuser")){
+                    try  {
+                        String userName = inputArray[1];
+                        if(group_client.deleteUser(userName, mytoken)) {
+                            System.out.println("Deleted user " + userName);
+                        } else {
+                            System.out.println("Unable to delete user");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("creategroup")){
+                    try  {
+                        String groupName = inputArray[1];
+                        if(group_client.createGroup(groupName, mytoken)) {
+                            System.out.println("Created group " + groupName);
+                        } else {
+                            System.out.println("Unable to create group");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("deletegroup")){
+                    try  {
+                        String groupName = inputArray[1];
+                        if(group_client.deleteGroup(groupName, mytoken)) {
+                            System.out.println("Deleted group " + groupName);
+                        } else {
+                            System.out.println("Unable to delete group");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("addgroupuser")){
+                    try  {
+                        String userName = inputArray[1];
+                        String groupName = inputArray[2];
+                        if(group_client.addUserToGroup(userName, groupName, mytoken)) {
+                            System.out.println("Added user " + userName + " to " + groupName);
+                        } else {
+                            System.out.println("Unable to add user to group");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("deletegroupuser")){
+                    try  {
+                        String userName = inputArray[1];
+                        String groupName = inputArray[2];
+                        if(group_client.deleteUserFromGroup(userName, groupName, mytoken)) {
+                            System.out.println("Deleted user " + userName + " from " + groupName);
+                        } else {
+                            System.out.println("Unable to delete user from group");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else if(inputArray[0].toLowerCase().equals("listmembers")){
+                    try  {
+                        String groupName = inputArray[1];
+                        List<String> groupList = group_client.listMembers(groupName, mytoken);
+                        System.out.println("Members in " + groupName);
+                        for(String group : groupList) {
+                            System.out.println(group);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                        error = true;
+                    } 
+                }
+                else {
+                    error = true;
+                }
+
+                if(error) {
+                    System.out.println("Error. Try again.");
+                }
 
                 System.out.print("Enter command: ");
                 input = console.next();
+                inputArray = input.split(" ");
             }
         }
         // Test Code In Here
         else {
             // get a token
             System.out.println("Running Tests");
-            UserToken mytoken = group_client.getToken("aadu");
+            mytoken = group_client.getToken("aadu");
             if (mytoken == null) {
                 System.out.println("Token creation unsucessful.");
             } else {
