@@ -55,6 +55,7 @@ public class RunClient {
             System.out.print("Welcome to Aadu, Alec, and Alex's File Server.\n\n" +
                 "Connected to the Group Server at " + group_server_url + ":" + group_server_port + "\n" +
                 "Connected to the File Server at " + file_server_url + ":" + file_server_port + "\n" +
+                "Connected as " + mytoken.getSubject() +
                 "Enter 'help' for help. \n\n" +
                 "Enter command: "
             );
