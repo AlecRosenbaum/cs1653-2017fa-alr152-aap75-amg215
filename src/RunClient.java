@@ -32,31 +32,90 @@ public class RunClient {
 
         // instantiate file client and group client
         GroupClient group_client = new GroupClient();
-        if (!group_client.connect(group_server_url, group_server_port)) {
+        if (group_client.connect(group_server_url, group_server_port)) {
+            System.out.println("Connected to group server " + group_server_url + ":" + group_server_port);
+        } else {
             System.out.println("Unable to connect to group server " + group_server_url + ":" + group_server_port);
         }
 
         FileClient file_client = new FileClient();
-        if (!file_client.connect(file_server_url, file_server_port)) {
-            System.out.println("Unable to connect to group server " + file_server_url + ":" + file_server_port);
+        if (file_client.connect(file_server_url, file_server_port)) {
+            System.out.println("Connected to file server " + file_server_url + ":" + file_server_port);
+        } else {
+            System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
         }
         
         // get a token
         UserToken mytoken = group_client.getToken("alec");
         if (mytoken == null) {
-            System.out.println("unsucessful.");
+            System.out.println("Token creation unsucessful.");
         } else {
-            System.out.println("it worked");
+            System.out.println("Token creation sucessful: " + mytoken.getSubject());
         }
 
 
         // upload a file
-        // file_client.upload(".gitignore", "test", "ADMIN", mytoken);
+        file_client.upload(".gitignore", "test", "ADMIN", mytoken);
 
         // list files
         ArrayList<String> files = (ArrayList<String>)file_client.listFiles(mytoken);
         for (String file: files) {
             System.out.println("File: " + file);
+        }
+        System.out.println("---------------");
+
+        // create group
+        if (group_client.createGroup("test_group", mytoken)) {
+            System.out.println("Group Created");
+        } else {
+            System.out.println("Group not created.");
+            return;
+        }
+
+        // list members
+        ArrayList<String> members = (ArrayList<String>)group_client.listMembers("test_group", mytoken);
+        for (String member: members) {
+            System.out.println("Member: " + member);
+        }
+        System.out.println("---------------");
+
+        // add user to group
+        group_client.createUser("new_user", mytoken);
+        if (group_client.addUserToGroup("new_user", "test_group", mytoken)) {
+            System.out.println("User added to group.");
+        } else {
+            System.out.println("User not added to group.");
+            return;
+        }
+
+        // list members
+        members = (ArrayList<String>)group_client.listMembers("test_group", mytoken);
+        for (String member: members) {
+            System.out.println("Member: " + member);
+        }
+        System.out.println("---------------");
+
+        // remove user from group
+        if (group_client.deleteUserFromGroup("new_user", "test_group", mytoken)) {
+            System.out.println("User deleted from group.");
+        } else {
+            System.out.println("User not deleted from group.");
+            return;
+        }
+
+        // list members
+        members = (ArrayList<String>)group_client.listMembers("test_group", mytoken);
+        for (String member: members) {
+            System.out.println("Member: " + member);
+        }
+        System.out.println("---------------");
+
+        // delete group
+        if (group_client.deleteGroup("test_group", mytoken)) {
+            System.out.println("Group deleted.");
+        } else {
+            System.out.println("Group not deleted.");
+            return;
         }
 
         // teardown
