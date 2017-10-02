@@ -107,7 +107,7 @@ public class RunClient {
                         "\tdeletegroupuser [username] [groupname]\n" +
                         "\t\tDeletes user from a group.\n" +
                         "\tlistmembers [groupname]\n" +
-                        "\t\tLists all users in given group.\n"
+                        "\t\tLists all users in given group.\n\n"
                     );
                 }
                 else if(inputArray[0].toLowerCase().equals("fconnect")){
@@ -325,6 +325,8 @@ public class RunClient {
                 if(error) {
                     System.out.println("Error. Try again.");
                 }
+
+                mytoken = group_client.getToken(mytoken.getSubject()); //refresh token
 
                 System.out.print("Enter command: ");
                 input = console.nextLine();
