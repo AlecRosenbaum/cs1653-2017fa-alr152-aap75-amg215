@@ -99,6 +99,8 @@ public class GroupServer extends Server {
 			System.out.println("Error reading from GroupList file");
 			System.exit(-1);
 		}
+
+		System.out.println("GroupServer up and running");
 		
 		//Autosave Daemon. Saves lists every 5 minutes
 		AutoSave aSave = new AutoSave(this);
