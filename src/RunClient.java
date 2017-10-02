@@ -48,7 +48,15 @@ public class RunClient {
         } else {
             System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
         }
-        UserToken mytoken = group_client.getToken("aadu");
+
+        System.out.print("Enter user name: ");
+        String u = console.nextLine();
+        UserToken mytoken = group_client.getToken(u);
+        if (mytoken == null) {
+            System.out.println("Login Unsuccessful");
+        } else {
+            System.out.println("Login sucessful: " + mytoken.getSubject());
+        }
 
         //Client Code In Here
         if (args.length != 5 || !args[4].equals("test")) {
