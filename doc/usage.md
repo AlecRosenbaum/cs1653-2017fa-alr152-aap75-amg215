@@ -1,4 +1,5 @@
 # Usage Instructions
+ There are shortcuts for the running of the group and file server along with the client in our makefile. Run `make run_group_server`, ` make run_file_server`, and `make run_client` to check them out.
 
 ## Running the Group Server
 
@@ -25,3 +26,46 @@ The file server will create a shared_files inside the working directory if one d
 To reset the Group Server, delete the file `UserList.bin`
 
 To reset the File Server, delete the `FileList.bin` file and the `shared_files/` directory.
+
+## Running the Client
+
+To run the client type `java RunClient localhost 8765 localhost 4321`. The arguments are the group server url then group server port then file server url then file server port. The above command will start the client if you started the file and group servers with their default configurations.
+
+To login use the user name you entered when creating the group server as initially that will be the only user.
+
+You can enter `help` at any time to view all commands but the available commands are as follows:
+
+##### File Server Commands:
+- fconnect [url] [port]
+    - Connects to new file server      
+- fdisconnect 
+    - Disconnects from current file server.            
+- listfiles 
+    - Lists file in current file server.        
+- upload [sourcefile] [destinationfile] [group] 
+    - Upload file to file server.  
+- download [remotefile] [localfile] 
+    - Download file from file server.  
+- delete [filename] 
+    - Delete file from file server.  
+##### Group Server Commands 
+- gconnect [url] [port] 
+    - Connects to new group server.                             
+- gdisconnect 
+    - Disconnects from current group server.                        
+- changeuser [username] 
+    - Changes current user.                   
+- createuser [username] 
+    - Creates new user, does NOT switch to that user. 
+- deleteuser [username] 
+    - Deletes existing user. 
+- creategroup [groupname] 
+    - Creates new group. 
+- deletegroup [groupname] 
+    - Deletes an existing groups. 
+- addgroupuser [username] [groupname] 
+    - Adds user to an existing group. 
+- deletegroupuser [username] [groupname] 
+    - Deletes user from a group. 
+- listmembers [groupname] 
+    - Lists all users in given group.
