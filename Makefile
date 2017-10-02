@@ -6,6 +6,9 @@ run_group_server:
 run_file_server:
 	(cd build && java RunFileServer)
 
+test_client:
+	java -cp build RunClient localhost 8765 localhost 4321 test
+
 run_client:
 	java -cp build RunClient localhost 8765 localhost 4321
 
