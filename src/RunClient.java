@@ -72,7 +72,7 @@ public class RunClient {
             String[] inputArray;
             int port;
             do {
-                System.out.print("Enter command: ");
+                System.out.print("<" + mytoken.getSubject() + "> Enter command: ");
                 input = console.nextLine();
                 inputArray = input.split(" ");
 
@@ -249,15 +249,18 @@ public class RunClient {
                         group_client.disconnect();
                         file_client.disconnect();
                         return;
+                    default:
+                        System.out.println("That command wasn't recognized.");
                     }
                 } catch (Exception e) {
                     System.err.println("Error: " + e.getMessage());
                     System.out.println("Error. Try again.");
                 }
 
+                // reconnect to groupserver, refresh token
+                group_client.disconnect();
+                group_client.connect(group_server_url, group_server_port);
                 mytoken = group_client.getToken(mytoken.getSubject()); //refresh token
-                System.out.println(mytoken.getSubject());
-                System.out.println(mytoken.getGroups());
             } while (true);
         }
         // Test Code In Here
