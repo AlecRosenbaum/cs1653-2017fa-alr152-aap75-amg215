@@ -242,32 +242,38 @@ public class GroupThread extends Thread {
 			if (temp.contains("ADMIN")) {
 				//Does user exist?
 				if (my_gs.userList.checkUser(username)) {
-					//User needs deleted from the groups they belong
-					ArrayList<String> deleteFromGroups = new ArrayList<String>();
+					
+					if(!requester.equals(username)){
+						
+						//User needs deleted from the groups they belong
+						ArrayList<String> deleteFromGroups = new ArrayList<String>();
 
-					//This will produce a hard copy of the list of groups this user belongs
-					for (int index = 0; index < my_gs.userList.getUserGroups(username).size(); index++) {
-						deleteFromGroups.add(my_gs.userList.getUserGroups(username).get(index));
+						//This will produce a hard copy of the list of groups this user belongs
+						for (int index = 0; index < my_gs.userList.getUserGroups(username).size(); index++) {
+							deleteFromGroups.add(my_gs.userList.getUserGroups(username).get(index));
+						}
+
+						//If groups are owned, they must be deleted
+						ArrayList<String> deleteOwnedGroup = new ArrayList<String>();
+
+						//Make a hard copy of the user's ownership list
+						for (int index = 0; index < my_gs.userList.getUserOwnership(username).size(); index++) {
+							deleteOwnedGroup.add(my_gs.userList.getUserOwnership(username).get(index));
+						}
+
+						//Delete owned groups
+						for (int index = 0; index < deleteOwnedGroup.size(); index++) {
+							//Use the delete group method. Token must be created for this action
+							deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup));
+						}
+
+						//Delete the user from the user list
+						my_gs.userList.deleteUser(username);
+
+						return true;
+					}else{
+						return false;
 					}
-
-					//If groups are owned, they must be deleted
-					ArrayList<String> deleteOwnedGroup = new ArrayList<String>();
-
-					//Make a hard copy of the user's ownership list
-					for (int index = 0; index < my_gs.userList.getUserOwnership(username).size(); index++) {
-						deleteOwnedGroup.add(my_gs.userList.getUserOwnership(username).get(index));
-					}
-
-					//Delete owned groups
-					for (int index = 0; index < deleteOwnedGroup.size(); index++) {
-						//Use the delete group method. Token must be created for this action
-						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup));
-					}
-
-					//Delete the user from the user list
-					my_gs.userList.deleteUser(username);
-
-					return true;
 				} else {
 					return false; //User does not exist
 
@@ -317,6 +323,10 @@ public class GroupThread extends Thread {
 			if (my_gs.groups.contains(group)) {
 				ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
 				if (temp.contains(group)) {
+					List<String> members = listMembers(group, token);
+					for (int index = 0; index < members.size(); index++) {
+						deleteUserFromGroup(members.get(index), group, token);
+					}
 					my_gs.groups.remove(group);
 					return true;
 
@@ -363,9 +373,16 @@ public class GroupThread extends Thread {
 			if (my_gs.groups.contains(groupname)) {
 				ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
 				if (temp.contains(groupname)) {
-
-					my_gs.userList.removeGroup(username, groupname);
-					return true;
+					if(username.equals(token.getSubject())){//If the group manager wants to remove them self from the group, the group is deleted as well
+						
+						deleteGroup(groupname, token);
+						return true;
+					}
+					else{
+						my_gs.userList.removeGroup(username, groupname);
+						return true;
+					}
+					
 				} else {
 					return false;//user not group owner
 				}

@@ -13,7 +13,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 private ObjectOutputStream output;
 	 
 	 public boolean connect(final String server, final int port){
-		 System.out.println("attempting to connect");
 		 try{
 			 
 			 userSocket = new Socket(server, port);
