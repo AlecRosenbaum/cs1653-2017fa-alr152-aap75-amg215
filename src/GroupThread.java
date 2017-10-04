@@ -329,7 +329,7 @@ public class GroupThread extends Thread {
 			if (my_gs.groups.contains(group)) {
 				ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
 				if (temp.contains(group)) {
-					my_gs.userList.removeOwnership(requester, groupname);
+					my_gs.userList.removeOwnership(requester, group);
 					my_gs.userList.removeGroupMembers(group);
 					my_gs.groups.remove(group);
 					return true;
