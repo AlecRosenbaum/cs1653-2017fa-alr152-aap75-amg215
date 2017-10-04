@@ -12,7 +12,6 @@ public abstract class Client {
     protected ObjectInputStream input;
 
     public boolean connect(final String server, final int port) {
-        System.out.println("attempting to connect");
 
         try {
 

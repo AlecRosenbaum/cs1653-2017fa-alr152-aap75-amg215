@@ -59,6 +59,15 @@ import java.util.*;
 			return listmembers;
 		}
 		
+		public synchronized void removeGroupMembers(String groupname){
+			
+			ArrayList<String> groupmembers = getGroupMembers(groupname);
+			for(int i = 0; i < groupmembers.size(); i++) {
+				
+				removeGroup(groupmembers.get(i), groupname);
+			}
+		}
+		
 		public synchronized void addGroup(String user, String groupname)
 		{
 			list.get(user).addGroup(groupname);
