@@ -247,7 +247,7 @@ public class GroupThread extends Thread {
 					
 					if(!requester.equals(username)){
 						
-						//User needs deleted from the groups they belong
+						//The user needs to be deletd from all groups they belong to 
 						ArrayList<String> deleteFromGroups = new ArrayList<String>();
 
 						//This will produce a hard copy of the list of groups this user belongs
@@ -273,17 +273,21 @@ public class GroupThread extends Thread {
 						my_gs.userList.deleteUser(username);
 
 						return true;
-					}else{
+					}
+					else{
 						return false;
 					}
-				} else {
+				} 
+				else {
 					return false; //User does not exist
 
 				}
-			} else {
+			} 
+			else {
 				return false; //requester is not an administer
 			}
-		} else {
+		} 
+		else {
 			return false; //requester does not exist
 		}
 	}
