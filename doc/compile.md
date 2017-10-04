@@ -5,4 +5,4 @@ To compile the client and server code:
  - Type `javac *.java`
 
 Or
- -run 'make' which by default builds and runs program
+ -run 'make' which by default builds the program and places the built .class files into "build"
