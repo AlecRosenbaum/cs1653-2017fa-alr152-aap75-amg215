@@ -12,7 +12,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 private ObjectInputStream input;
 	 private ObjectOutputStream output;
 	 
-	 }
 	 public UserToken getToken(String username)
 	 {
 		try
