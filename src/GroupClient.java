@@ -12,31 +12,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 private ObjectInputStream input;
 	 private ObjectOutputStream output;
 	 
-	 public boolean connect(final String server, final int port){
-		 try{
-			 
-			 userSocket = new Socket(server, port);
-			 output = new ObjectOutputStream(userSocket.getOutputStream());
-	         input = new ObjectInputStream(userSocket.getInputStream());
-			 return true;
-		 }
-		 catch (Exception e){
-			 
-			 System.err.println("Error: " + e.getMessage());
-			 return false;
-		 }
-		 
-	 }
-	 public void disconnect(){
-		 if (userSocket.isConnected()){
-			 try {
-	                Envelope message = new Envelope("DISCONNECT");
-	                output.writeObject(message);
-	            } catch (Exception e) {
-	                System.err.println("Error: " + e.getMessage());
-	                e.printStackTrace(System.err);
-	            } 
-		 }
 	 }
 	 public UserToken getToken(String username)
 	 {
