@@ -223,10 +223,12 @@ public class GroupThread extends Thread {
 					my_gs.userList.addUser(username);
 					return true;
 				}
-			} else {
+			} 
+			else {
 				return false; //requester not an administrator
 			}
-		} else {
+		} 
+		else {
 			return false; //requester does not exist
 		}
 	}
@@ -323,10 +325,8 @@ public class GroupThread extends Thread {
 			if (my_gs.groups.contains(group)) {
 				ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
 				if (temp.contains(group)) {
-					List<String> members = listMembers(group, token);
-					for (int index = 0; index < members.size(); index++) {
-						deleteUserFromGroup(members.get(index), group, token);
-					}
+					my_gs.userList.removeOwnership(requester, groupname);
+					my_gs.userList.removeGroupMembers(group);
 					my_gs.groups.remove(group);
 					return true;
 
@@ -374,8 +374,9 @@ public class GroupThread extends Thread {
 				ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
 				if (temp.contains(groupname)) {
 					if(username.equals(token.getSubject())){//If the group manager wants to remove them self from the group, the group is deleted as well
-						
-						deleteGroup(groupname, token);
+						my_gs.userList.removeOwnership(username, groupname);
+						my_gs.userList.removeGroupMembers(groupname);
+						my_gs.groups.remove(groupname);
 						return true;
 					}
 					else{
