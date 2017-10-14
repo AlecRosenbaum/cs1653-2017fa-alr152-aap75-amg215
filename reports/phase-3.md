@@ -33,6 +33,7 @@ The Group Server will have a public key and associated private key used only for
 
 * B -> S: ``<requests token for Bob>``
 * S -> B: `[ token ] Ks^(-1)`
+* Bob now has a token with integrity that can be easily verified by a third party who trusts S.
 
 
 ### T3
