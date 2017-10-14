@@ -51,7 +51,7 @@ Since our trust model assumes the existence of passive attackers (e.g., nosy adm
 
 #### Protection
 
-To protect against this threat model, we will utilize the Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a Diffie Hellman key exchange, thus allowing the client and server to agree on a new shared secret key before every interaction and granting perfect forward secrecy. During application development, values g and q will be chosen and baked into the applications. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
+To protect against this threat model, we will utilize the Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a Diffie Hellman key exchange. This allows the client and server to agree on a new shared secret key before every interaction, and grants perfect forward secrecy. During application development, values g and q will be chosen and baked into the applications. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
 
 * Bob picks random value a.
 * B -> S: `(g^a) mod q`
