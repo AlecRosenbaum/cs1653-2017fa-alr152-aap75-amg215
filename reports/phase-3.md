@@ -32,7 +32,7 @@ Users are expected to attempt to modify their tokens to increase their access ri
 The Group Server will have a public key and associated private key used only for signing. When a token is issued by the group server, it will be signed using this key pair. Any time a token is communicated, the appropriate signature must be included. This signature will provide the ability for any third party to verify the integrity of the token using the Group Server's public key. The request/receipt of a token will be comprised of the following exchanges between Bob (B) and the Group Server (S):
 
 * B -> S: ``<requests token for Bob>``
-* S -> B: `[ token ]Ks^(-1)`
+* S -> B: `[ token ] Ks^(-1)`
 
 
 ### T3
@@ -52,5 +52,8 @@ Since our trust model assumes the existence of passive attackers (e.g., nosy adm
 
 To protect against this threat model, we will utilize the Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a Diffie Hellman key exchange, thus allowing the client and server to agree on a new shared secret key before every interaction and granting perfect forward secrecy. During application development, values g and q will be chosen and baked into the applications. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
 
-* B -> S:  `(g^b) mod q`
-* S -> B:  `(g^a) mod q`
+* Bob picks random value a.
+* B -> S: `(g^a) mod q`
+* Server picks random value b.
+* S -> B: `(g^b) mod q`
+* Bob and Server now have a shared key `K= g^(a*b) mod q`
