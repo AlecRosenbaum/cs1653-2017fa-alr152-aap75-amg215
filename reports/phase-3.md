@@ -40,12 +40,17 @@ The Group Server will have a public key and associated private key used only for
 
 #### Description
 
+<<<<<<< HEAD
 The file server implementation must ensure that if a user attempts to contact
 some server, s, then they actually connect to s and not some other server.
 
 #### Protection
 
 We will mirror ssh's implementation to solve this issue. On the first connection from a user to a file server the file server will provide the user with a hash of its public key called a fingerprint. The user will save that locally. Then on any further communication with that file server the file server will provide the user with that fingerprint. If it doesn't match to the fingerprint the user expects the user will be alerted and disconnected from the file server.
+=======
+#### Protection
+
+>>>>>>> master
 
 ### T4 - Information Leakage via Passive Monitoring
 
