@@ -25,7 +25,7 @@
 
 #### Description
 
-Users are expected to attempt to modify their tokens to increase their access rights, and to attempt to create forged tokens. Your implementation of the UserToken interface must be extended to allow file servers (or anyone else) to determine whether a token is in fact valid. Specifically, it must be possible for a third-party to verify that a token was in fact issued by a trusted group server and was not modified after issuance.
+Users are expected to attempt to modify their tokens to increase their access rights, and to attempt to create forged tokens. It must be possible for a third-party to verify that a token was in fact issued by a trusted group server and was not modified after issuance.
 
 #### Protection
 
@@ -47,7 +47,7 @@ The Group Server will have a public key and associated private key used only to 
 
 #### Description
 
-Since our trust model assumes the existence of passive attackers (e.g., nosy administrators), you must ensure that all communications between your client and server applications are hidden from outside observers. This will ensure that file contents remain private, and that tokens cannot be stolen in transit.
+Since our trust model assumes the existence of passive attackers (e.g., nosy administrators), all communications between client and server applications must be hidden from outside observers. This will ensure that file contents remain private, and that tokens cannot be stolen in transit.
 
 #### Protection
 
