@@ -14,12 +14,29 @@
 
 ## Threats to Protect Against
 
-### T1
+### T1 - Unauthorized Token Issuance
 
 #### Description
 
+Due to the fact that clients are untrusted, the group server must be protected against illegitimate clients requesting tokens from it, and ensure all clients are authenticated in a secure manner prior to issuing them tokens.
+
 #### Protection
 
+Because there is an assumption that clients are not trustworthy, all clients (C) must be verified via a password before being issued a token.  When an administrator (A) first creates a user, the server (S) issues a one-time password of 8-16 randomized characters.  This password is communicated to the new user via the administrator, and upon their first successful entry to the server they are told to enter their new password.  They will then use this password for all subsequent attempts to enter the server. 
+
+* Administrator creates a new user, is issued one-time password by server
+* S -> A: `one-time password`
+* Administrator communicates password to client
+* A -> C: `one-time password (communicated in person)`
+* Client attempts to request token without having set password, request is denied
+* C -> S: `<requests token>`
+* S -> C: `<request denied> (password not reset)`
+* Client provides one-time password, password change requested
+* C -> S: `changepassword, <one-time password>, <new password>`
+* S -> C: `<accept password change request>`
+* Normal client log in after password change
+* C -> S: `<requests token>, password`
+* S -> C: `<token>`
 
 ### T2 - Token Modification/Forgery
 
