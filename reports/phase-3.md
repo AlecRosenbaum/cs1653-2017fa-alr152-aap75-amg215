@@ -34,7 +34,7 @@ Because there is an assumption that clients are not trustworthy, all clients (C)
 * Client requests token with correct one-time password, password change request prompted
 * C -> S: `changepassword, <one-time password>, <new password>`
 * S -> C: `<accept password change request>`
-* Normal Client log in after password change
+* Normal client log in after password change
 * C -> S: `<requests token>, password`
 * S -> C: `<token>`
 
