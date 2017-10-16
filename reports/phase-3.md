@@ -28,13 +28,13 @@ Because there is an assumption that clients are not trustworthy, all clients (C)
 * S -> A: `one-time password`
 * Administrator communicates password to client
 * A -> C: `one-time password (communicated in person)`
-* Client attempts to log in with incorrect one-time password, access denied
+* Client attempts to request token with incorrect one-time password, access denied
 * C -> S: `<requests token>`
 * S -> C: `<request denied> (password not reset)`
-* Client attempts to log in with correct one-time password, password reset prompted
+* Client requests token with correct one-time password, password change request prompted
 * C -> S: `changepassword, <one-time password>, <new password>`
 * S -> C: `<accept password change request>`
-* Normal Client log in after first succesful attempt
+* Normal Client log in after password change
 * C -> S: `<requests token>, password`
 * S -> C: `<token>`
 
