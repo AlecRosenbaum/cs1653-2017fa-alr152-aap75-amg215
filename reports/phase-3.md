@@ -22,14 +22,14 @@ Due to the fact that clients are untrusted, the group server must be protected a
 
 #### Protection
 
-Because there is an assumption that clients are not trustworthy, all clients (C) must be verified via a password (P) before being issued a token.  When an administrator (A) first creates a user, the server (S) issues a one-time password (O) of 8-16 randomized characters.  This password is communicated to the new user via the administrator, and upon their first successful entry to the server they are told to enter their new password.  They will then use this password for all subsequent attempts to enter the server. 
+Because there is an assumption that clients are not trustworthy, all clients (C) must be verified via a password before being issued a token.  When an administrator (A) first creates a user, the server (S) issues a one-time password of 8-16 randomized characters.  This password is communicated to the new user via the administrator, and upon their first successful entry to the server they are told to enter their new password.  They will then use this password for all subsequent attempts to enter the server. 
 
 * Administrator creates a new user, is issued one-time password by server
-* S(O) -> A
+* S -> A: `one-time password`
 * Administrator communicates password to client
-* A(O) -> C
+* A -> C: `one-time password`
 * Client logs in with one-time password, and enters new permanent password, which is stored by the server
-* C(O,P) -> S(P)
+* C -> S: `one-time password + permanent password`
 
 ### T2 - Token Modification/Forgery
 
