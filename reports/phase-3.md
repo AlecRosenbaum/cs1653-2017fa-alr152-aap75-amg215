@@ -27,9 +27,16 @@ Because there is an assumption that clients are not trustworthy, all clients (C)
 * Administrator creates a new user, is issued one-time password by server
 * S -> A: `one-time password`
 * Administrator communicates password to client
-* A -> C: `one-time password`
-* Client logs in with one-time password, and enters new permanent password, which is stored by the server
-* C -> S: `one-time password + permanent password`
+* A -> C: `one-time password (communicated in person)`
+* Client attempts to log in with incorrect one-time password, access denied
+* C -> S: `<requests token>`
+* S -> C: `<request denied> (password not reset)`
+* Client attempts to log in with correct one-time password, password reset prompted
+* C -> S: `changepassword, <one-time password>, <new password>`
+* S -> C: `<accept password change request>`
+* Normal Client log in after first succesful attempt
+* C -> S: `<requests token>, password`
+* S -> C: `<token>`
 
 ### T2 - Token Modification/Forgery
 
