@@ -7,10 +7,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class GroupClient extends Client implements GroupClientInterface {
- 
-	 private Socket userSocket;
-	 private ObjectInputStream input;
-	 private ObjectOutputStream output;
 	 
 	 public UserToken getToken(String username)
 	 {
