@@ -62,7 +62,7 @@ some server, s, then they actually connect to s and not some other server.
 
 #### Protection
 
-We will mirror ssh's implementation to solve this issue. On the first connection from a user to a file server the file server will provide the user with a hash of its public key called a fingerprint. This hash will be a SHA256 hash that should be secure for the forseeable future. The user will save that locally. Then on any further communication with that file server the file server will provide the user with that fingerprint. If it doesn't match to the fingerprint the user expects the user will be alerted and disconnected from the file server.
+We will mirror ssh's implementation to solve this issue. On the first connection from a user to a file server the file server will provide the user with a hash of its public key called a fingerprint. This hash will be a SHA256 hash that should be secure for the foreseeable future. The user will save that locally. Then on any further communication with that file server the file server will provide the user with that fingerprint. If it doesn't match to the fingerprint the user expects the user will be alerted and disconnected from the file server.
 
 * Bob Connects to file server 1 for the first time.
 * B -> S ``<connects and requests token>``
@@ -77,14 +77,28 @@ We will mirror ssh's implementation to solve this issue. On the first connection
 
 #### Description
 
-Since our trust model assumes the existence of passive attackers (e.g., nosy administrators), all communications between client and server applications must be hidden from outside observers. This will ensure that file contents remain private, and that tokens cannot be stolen in transit.
+<!-- Begin by describing the threat treated in this section. This may include describing examples of the threat being exploited by an adversary, a short discussion of why this threat is problematic and needs to be addressed, and/or diagrams showing how the threat might manifest in your group’s current (insecure) implementation -->
+
+This threat model assumes the the existence of passive attackers (e.g., nosy administrators). This means that all communications between client and server applications are visible to any third party observing the wire, and thus the contents of all traffic must be secured to protect confidentiality. Confidentiality ensures that file contents remain private, and that tokens/passwords cannot be stolen in transit. Without confidentiality, the following scenario is possible:
+
+* Adversary *A* is passively monitoring the network.
+* *Bob* -> *Group Server* : `<requests a token>, Bob, password`
+* *A* now knows that user *Bob* exists, and also knows what Bob's password is.
+* *A* can now impersonate *Bob* and request a token in his name.
 
 #### Protection
 
-To protect against this threat model, we will utilize the Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a Diffie Hellman key exchange. This allows the client and server to agree on a new shared secret key before every interaction, and grants perfect forward secrecy. During application development, values g and q will be chosen and baked into the applications. Value q will be 2048 bits, and values a and b will be 224 bits. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
+To protect against this threat model, we will utilize the Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a Diffie Hellman key exchange. This allows the client and server to agree on a new shared secret key before every interaction, and grants perfect forward secrecy. After the key exchange, all messages will be encrypted using AES with the symmetric, shared key. During application development, values g and q will be chosen and baked into the applications. Value q will be 2048 bits, and values a and b will be 224 bits. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
 
 * Bob picks random value a.
-* B -> S: `(g^a) mod q`
+* *B* -> *S*: `(g^a) mod q`
 * Server picks random value b.
-* S -> B: `(g^b) mod q`
+* *S* -> *B*: `(g^b) mod q`
 * Bob and Server now have a shared key `K= g^(a*b) mod q`
+* *B* -> *S*: `{<message>}K`
+* *S* -> *B*: `{<message>}K`
+
+
+#### Argument
+
+The suggested protocol specifies an implementation of the Diffie-Hellman key exchange protocol. Diffie-Hellman is a well-known method for securely agreeing on a cryptographic key over a public channel. Diffie-Hellman's security properties rely on the the difficulty of solving the discrete logarithm problem, which has no known efficient general solution. After a shared key is agreed upon, communications will be secured by encrypting message contents with AES and the shared key.
