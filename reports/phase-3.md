@@ -1,4 +1,4 @@
-# Phase 3 Preliminary Report
+# Phase 3 Writeup
 
 ## Group Information
 
