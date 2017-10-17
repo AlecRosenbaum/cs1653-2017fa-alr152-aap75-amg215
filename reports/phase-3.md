@@ -42,16 +42,26 @@ Because there is an assumption that clients are not trustworthy, all clients (C)
 
 #### Description
 
-Users are expected to attempt to modify their tokens to increase their access rights, and to attempt to create forged tokens. It must be possible for a third-party to verify that a token was in fact issued by a trusted group server and was not modified after issuance.
+Tokens issued by a trusted Group Server grant users access to groups and files. This threat model states that Users are not to be trusted, and will attempt to modify/forge tokens to increase their access rights. If a user is able to increase their access rights by modifying/forging a token, tokens become worthless as a method for defining access rights. To counter this threat, it must be possible for any third party (i.e. a File Server) to verify the integrity of all tokens received. In order to retain the functionality of distributed file servers that can spawn without notifying the trusted Group Server, this verification should be done without contacting said Group Server. The following is a diagram showing how token modification could be exploited to gain access to additional groups:
+
+* **Bob (B)** -> **Group Server (GS)**: `<token request>, Bob`
+* **GS** -> **B**: `<token>`
+* **B** adds group *secret_group* to his token
+* **B** -> **File Server (FS)**: `<requests file f in group secret_group>, <token>`
+* **FS** -> **B**: `<file f's contents>`
+* Bob now has access to all files in the group *secret_group*
 
 #### Protection
 
-The Group Server will have a public key and associated private key used only to generate RSA signatures. The key size will be 2048 bits. When a token is issued by the group server, it will be signed using this key pair. Any time a token is communicated, the appropriate signature must be included. This signature will provide the ability for any third party to verify the integrity of the token using the Group Server's public key. The request/receipt of a token will be comprised of the following exchanges between Bob (B) and the Group Server (S):
+The Group Server will have a public key and associated private key used only to generate RSA signatures. The key size will be 2048 bits. When a token is issued by the group server, it will be hashed (with SHA256) and signed using this key pair. Any time a token is communicated, the appropriate signature must be included. This signature will provide the ability for any third party to verify the integrity of the token using the Group Server's public key. The request/receipt of a token will be comprised of the following exchanges between Bob (B) and the Group Server (S):
 
-* B -> S: ``<requests token for Bob>``
-* S -> B: `[ token ] Ks^(-1)`
+* **B** -> **S**: ``<requests token for Bob>``
+* **S** -> **B**: `[ token ] Ks^(-1)`
 * Bob now has a token with integrity that can be easily verified by a third party who trusts S.
 
+#### Argument
+
+The suggested protocol allows any third party to verify the integrity of a token issued by a trusted Group Server. SHA256 will be used to generate the hash of the token, as it is a widely used hash algorithm that does a good job of providing both pre-image and second pre-image resistance. This hash will then be transformed into a signature using the private key of the trusted Group Server. The transformation of the hash into a signature relies on RSA public-key cryptography. RSA's medium-term security with large (2048 - 4096 bits) is not disputed by the cryptography community, and it is assumed to be relatively secure. RSA's security relies on the difficulty of the discrete logarithm problem, for which there is no known efficient general solution. Finally, this signature can be verified by anyone, as the Group Server's public key is publicly known information and can be used to decrypt the signature into a verifiable hash.
 
 ### T3
 
@@ -77,12 +87,21 @@ We will mirror ssh's implementation to solve this issue. On the first connection
 
 #### Description
 
-This threat model assumes the the existence of passive attackers (e.g., nosy administrators). This means that all communications between client and server applications are visible to any third party observing the wire, and thus the contents of all traffic must be secured to protect confidentiality. Confidentiality ensures that file contents remain private, and that tokens/passwords cannot be stolen in transit. Without confidentiality, the following scenario is possible:
+This threat model assumes the the existence of passive attackers (e.g., nosy administrators). This means that all communications between client and server applications are visible to any third party observing the wire, and thus the contents of all traffic must be secured to protect confidentiality. Confidentiality ensures that file contents remain private, and that tokens/passwords cannot be stolen in transit. Without confidentiality, the following scenarios are possible:
+
+##### Token Theft
 
 * Adversary **A** is passively monitoring the network.
 * **Bob** -> **Group Server** : `<requests a token>, Bob, password`
-* **A** now knows that user **Bob** exists, and also knows what Bob's password is.
+* **A** now knows that user **Bob** exists, and also knows how to authenticate as Bob.
 * **A** can now impersonate **Bob** and request a token in his name.
+
+##### File Theft
+
+* Adversary **A** is passively monitoring the network.
+* **Bob** -> **File Server** : `<requests a file>, <token>`
+* **File Server** -> **Bob**: `<file contents>`
+* **A** now knows that the file exists, knows how to authenticate as Bob, and also knows the contents of the transmitted file.
 
 #### Protection
 
