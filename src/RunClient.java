@@ -258,8 +258,8 @@ public class RunClient {
                 }
 
                 // reconnect to groupserver, refresh token
-                group_client.disconnect();
-                group_client.connect(group_server_url, group_server_port);
+                // group_client.disconnect();
+                // group_client.connect(group_server_url, group_server_port);
                 mytoken = group_client.getToken(mytoken.getSubject()); //refresh token
             } while (true);
         }
