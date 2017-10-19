@@ -67,21 +67,25 @@ The suggested protocol allows any third party to verify the integrity of a token
 
 #### Description
 
-The file server implementation must ensure that if a user attempts to contact
-some server, s, then they actually connect to s and not some other server.
+The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is acctual that server than a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a differet file server it can recieve the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. 
 
 #### Protection
 
-We will mirror ssh's implementation to solve this issue. On the first connection from a user to a file server the file server will provide the user with a hash of its public key called a fingerprint. This hash will be a SHA256 hash that should be secure for the foreseeable future. The user will save that locally. Then on any further communication with that file server the file server will provide the user with that fingerprint. If it doesn't match to the fingerprint the user expects the user will be alerted and disconnected from the file server.
+We will mirror ssh's implementation to solve this issue. On the first connection from a user to a file server the file server will provide the user with a hash of its public key called a fingerprint. This hash will be a SHA256 hash that should be secure for the foreseeable future. The user will save that locally. Then on any further communication with that file server the file server will provide the user with that fingerprint. If it doesn't match to the fingerprint the user expects the user will be alerted and disconnected from the file server. The hash is used so that the entire key does not have to provided which would be much more resource intensive.
 
 * Bob Connects to file server 1 for the first time.
-* B -> S ``<connects and requests token>``
+* **B** -> **S** ``<connects and requests token>``
 * File server 1 sends bob its fingerprint.
-* S -> B ``SHA256(key)``
+* **S** -> **B** ``SHA256(key)``
 * Bob connects with file server 1 and requests its fingerprint.
-* B -> S ``<fingerprint request>``
+* **B** -> **S** ``<fingerprint request>``
 * Server will send Bob a fingerprint. If it's the right one then bob will be good to use the server.
-* S -> B ``<fingerprint>``
+* **S** -> **B** ``<fingerprint>``
+
+#### Argument
+
+This protection will assure the user of the client that they are connecting to the file server they intend to connect to. They can be assured they are not uploading or downloading files from a different server by checking the file server's fingerprint. If the fingerprint doesn't match then the client will refuse to connect to the new file server. 
+
 
 ### T4 - Information Leakage via Passive Monitoring
 
