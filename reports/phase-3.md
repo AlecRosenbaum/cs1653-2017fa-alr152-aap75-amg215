@@ -67,7 +67,7 @@ The suggested protocol allows any third party to verify the integrity of a token
 
 #### Description
 
-The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is acctual that server than a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a differet file server it can recieve the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. 
+The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a differet file server it can recieve the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. 
 
 #### Protection
 
