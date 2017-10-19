@@ -18,7 +18,17 @@
 
 #### Description
 
-Due to the fact that clients are untrusted, the group server must be protected against illegitimate clients requesting tokens from it, and ensure all clients are authenticated in a secure manner prior to issuing them tokens.
+For this threat model, there is an assumption that clients are untrusted, and that illegitimate clients may try and request tokens from the group server.  Any illegitimate client who successfully obtains a token will undermine the security of the sever, and negate any worth of using tokens to access and modify groups and files.  A security breach via illegitimate token access from the group server would look siilar to the following diagram: 
+
+* Unathorized Client(C) requests a token from Group Server(GS) with the username of owner of group g
+* **C** -> **GS**: `<token request>, group owner`
+* The Group Server provides the group owner's token 
+* **GS** -> **C**: `<token>`
+* Client deletes group from Group Server
+* **C** -> **GS**: `<requests deletion of group g>`
+* Group Server deletes group g from server, sends success message to Client
+* **GS** -> **C**: `<deletes group><success message>`
+* the Unathorized Client has deleted group g, preventing those members from accessing files associated with it
 
 #### Protection
 
@@ -37,6 +47,10 @@ Because there is an assumption that clients are not trustworthy, all clients (C)
 * Normal client log in after password change
 * C -> S: `<requests token>, password`
 * S -> C: `<token>`
+
+#### Argument
+
+The suggested protocol gives a base level of protection against unauthorized clients attempting to access the file system illegitimately.  By having the group server create a random password and forcing the administrator to directly communicate it to the authorized client in person (It should also be noted that the communication between the administrator and the group server are secured as well, as noted in T4) there are few ways for an attacker to obtain the random password.  As for the authorized client's permeant password, as for all password based security systems, part of the responsibility lies on the client to create a password that cannot be easily guessed by an attacker.   
 
 ### T2 - Token Modification/Forgery
 
