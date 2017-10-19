@@ -106,7 +106,7 @@ import java.util.*;
 		
 		public ArrayList<String> getGroups()
 		{
-			return groups;
+			return new ArrayList<>(groups);
 		}
 		
 		public ArrayList<String> getOwnership()
