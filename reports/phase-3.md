@@ -71,20 +71,20 @@ The file server implementation must ensure that if a user attempts to contact so
 
 #### Protection
 
-We will mirror ssh's implementation to solve this issue. On the first connection from a user to a file server the file server will provide the user with a hash of its public key called a fingerprint. This hash will be a SHA256 hash that should be secure for the foreseeable future. The user will save that locally. Then on any further communication with that file server the file server will provide the user with that fingerprint. If it doesn't match to the fingerprint the user expects the user will be alerted and disconnected from the file server. The hash is used so that the entire key does not have to provided which would be much more resource intensive.
+On the first connection from a user to a file server the file server will provide the user with its public key.  The user will save that locally. Then on any further communication with that file server the client will encrypt a large random number with that public key and send the encrypted message to the server. The server will then respond with the number that they decrypt with their private key. If the number matches the number that the client encrypted the client will know they have a secure connection.
 
 * Bob Connects to file server 1 for the first time.
 * **B** -> **S** ``<connects and requests token>``
-* File server 1 sends bob its fingerprint.
-* **S** -> **B** ``SHA256(key)``
-* Bob connects with file server 1 and requests its fingerprint.
-* **B** -> **S** ``<fingerprint request>``
-* Server will send Bob a fingerprint. If it's the right one then bob will be good to use the server.
-* **S** -> **B** ``<fingerprint>``
+* File server 1 sends bob its public key.
+* **S** -> **B** ``<public key>``
+* Bob connects with file server 1 sends it an encrypted message  of a random number with the public key.
+* **B** -> **S** ``<publickey(R1)>``
+* Server will send Bob R1 decrypted with its private key. If it's the right one then bob will be good to use the server.
+* **S** -> **B** ``<R1>``
 
 #### Argument
 
-This protection will assure the user of the client that they are connecting to the file server they intend to connect to. They can be assured they are not uploading or downloading files from a different server by checking the file server's fingerprint. If the fingerprint doesn't match then the client will refuse to connect to the new file server. 
+This protection will assure the user of the client that they are connecting to the file server they intend to connect to. They can be assured they are not uploading or downloading files from a different server by checking the file server's fingerprint. A malicious server will be unable to decrypt R1 and the client will disconnect and refuse to use a server without getting a new random number that it encrypts back. 
 
 
 ### T4 - Information Leakage via Passive Monitoring
