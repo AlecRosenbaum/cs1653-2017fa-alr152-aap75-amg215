@@ -5,10 +5,19 @@ import java.lang.Thread;
 import java.net.Socket;
 import java.io.*;
 import java.util.*;
+import java.security.*;
+import javax.crypto.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import javax.crypto.interfaces.DHPublicKey;
+import javax.crypto.spec.DHParameterSpec;
 
 public class GroupThread extends Thread {
 	private final Socket socket;
+	private ObjectInputStream input;
+	private ObjectOutputStream output;
 	private GroupServer my_gs;
+	private SecretKey DH_Key;
 
 	public GroupThread(Socket _socket, GroupServer _gs) {
 		socket = _socket;
@@ -21,11 +30,36 @@ public class GroupThread extends Thread {
 		try {
 			//Announces connection and opens object streams
 			System.out.println("*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
-			final ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+			input = new ObjectInputStream(socket.getInputStream());
+			output = new ObjectOutputStream(socket.getOutputStream());
+
+			// negotiate diffie hellman
+
+			// Exchange information for DH
+			KeyFactory clientKeyFac = KeyFactory.getInstance("DH");
+			byte[] DHinfo = (byte[]) input.readObject();
+			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(DHinfo);
+			PublicKey bobDHPub = clientKeyFac.generatePublic(x509KeySpec);
+
+			// Create Bob DH Keys
+			KeyPairGenerator bobKpGen = KeyPairGenerator.getInstance("DH");
+			DHParameterSpec dhParamSpec = ((DHPublicKey) bobDHPub).getParams();
+			bobKpGen.initialize(dhParamSpec);
+			KeyPair bobsKeys = bobKpGen.generateKeyPair();
+
+			KeyAgreement bobKeyAgreement = KeyAgreement.getInstance("DH");
+			bobKeyAgreement.init(bobsKeys.getPrivate());
+			bobKeyAgreement.doPhase(bobDHPub, true);
+
+			// Send Bob's DH Parameters to Alice
+			output.writeObject(bobsKeys.getPublic().getEncoded());
+
+			// Generate AES Secret Keys
+			this.DH_Key = bobKeyAgreement.generateSecret("AES");
+			System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
 
 			do {
-				Envelope message = (Envelope)input.readObject();
+				Envelope message = (Envelope) EncryptionUtils.decrypt(DH_Key, (byte[]) input.readObject());
 				System.out.println("Request received: " + message.getMessage());
 				Envelope response;
 
@@ -34,14 +68,14 @@ public class GroupThread extends Thread {
 					if (username == null) {
 						response = new Envelope("FAIL");
 						response.addObject(null);
-						output.writeObject(response);
+						writeObjectToOutput(response);
 					} else {
 						UserToken yourToken = createToken(username); //Create a token
 
 						//Respond to the client. On error, the client will receive a null token
 						response = new Envelope("OK");
 						response.addObject(yourToken);
-						output.writeObject(response);
+						writeObjectToOutput(response);
 					}
 				} else if (message.getMessage().equals("CUSER")) { //Client wants to create a user
 					if (message.getObjContents().size() < 2) {
@@ -61,7 +95,7 @@ public class GroupThread extends Thread {
 						}
 					}
 
-					output.writeObject(response);
+					writeObjectToOutput(response);
 				} else if (message.getMessage().equals("DUSER")) { //Client wants to delete a user
 
 					if (message.getObjContents().size() < 2) {
@@ -81,7 +115,7 @@ public class GroupThread extends Thread {
 						}
 					}
 
-					output.writeObject(response);
+					writeObjectToOutput(response);
 				} else if (message.getMessage().equals("CGROUP")) { //Client wants to create a group
 					/* TODO:  Write this handler */
 					if (message.getObjContents().size() < 2) {
@@ -103,7 +137,7 @@ public class GroupThread extends Thread {
 						}
 					}
 
-					output.writeObject(response);
+					writeObjectToOutput(response);
 				} else if (message.getMessage().equals("DGROUP")) { //Client wants to delete a group
 					if (message.getObjContents().size() < 2) {
 						response = new Envelope("FAIL");
@@ -121,7 +155,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					output.writeObject(response);
+					writeObjectToOutput(response);
 				} else if (message.getMessage().equals("LMEMBERS")) { //Client wants a list of members in a group
 					if (message.getObjContents().size() < 2) {
 						response = new Envelope("FAIL");
@@ -139,7 +173,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					output.writeObject(response);
+					writeObjectToOutput(response);
 				} else if (message.getMessage().equals("AUSERTOGROUP")) { //Client wants to add user to a group
 					if (message.getObjContents().size() < 2) {
 						response = new Envelope("FAIL");
@@ -158,7 +192,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					output.writeObject(response);
+					writeObjectToOutput(response);
 
 				} else if (message.getMessage().equals("RUSERFROMGROUP")) { //Client wants to remove user from a group
 					if (message.getObjContents().size() < 2) {
@@ -178,13 +212,13 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					output.writeObject(response);
+					writeObjectToOutput(response);
 				} else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
 					socket.close(); //Close the socket
 					proceed = false; //End this communication loop
 				} else {
 					response = new Envelope("FAIL"); //Server does not understand client request
-					output.writeObject(response);
+					output.writeObject(EncryptionUtils.encrypt(DH_Key, response));
 				}
 			} while (proceed);
 		} catch (Exception e) {
@@ -223,12 +257,10 @@ public class GroupThread extends Thread {
 					my_gs.userList.addUser(username);
 					return true;
 				}
-			} 
-			else {
+			} else {
 				return false; //requester not an administrator
 			}
-		} 
-		else {
+		} else {
 			return false; //requester does not exist
 		}
 	}
@@ -244,10 +276,10 @@ public class GroupThread extends Thread {
 			if (temp.contains("ADMIN")) {
 				//Does user exist?
 				if (my_gs.userList.checkUser(username)) {
-					
-					if(!requester.equals(username)){
-						
-						//The user needs to be deletd from all groups they belong to 
+
+					if (!requester.equals(username)) {
+
+						//The user needs to be deletd from all groups they belong to
 						ArrayList<String> deleteFromGroups = new ArrayList<String>();
 
 						//This will produce a hard copy of the list of groups this user belongs
@@ -273,21 +305,17 @@ public class GroupThread extends Thread {
 						my_gs.userList.deleteUser(username);
 
 						return true;
-					}
-					else{
+					} else {
 						return false;
 					}
-				} 
-				else {
+				} else {
 					return false; //User does not exist
 
 				}
-			} 
-			else {
+			} else {
 				return false; //requester is not an administer
 			}
-		} 
-		else {
+		} else {
 			return false; //requester does not exist
 		}
 	}
@@ -306,11 +334,11 @@ public class GroupThread extends Thread {
 			} else {
 				// add group to list
 				my_gs.groups.add(groupname);
-				
+
 				// add group to user, make user owner of group
 				my_gs.userList.addGroup(requester, groupname);
 				my_gs.userList.addOwnership(requester, groupname);
-				
+
 				return true;
 			}
 		} else {
@@ -377,17 +405,16 @@ public class GroupThread extends Thread {
 			if (my_gs.groups.contains(groupname)) {
 				ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
 				if (temp.contains(groupname)) {
-					if(username.equals(token.getSubject())){//If the group manager wants to remove them self from the group, the group is deleted as well
+					if (username.equals(token.getSubject())) { //If the group manager wants to remove them self from the group, the group is deleted as well
 						my_gs.userList.removeOwnership(username, groupname);
 						my_gs.userList.removeGroupMembers(groupname);
 						my_gs.groups.remove(groupname);
 						return true;
-					}
-					else{
+					} else {
 						my_gs.userList.removeGroup(username, groupname);
 						return true;
 					}
-					
+
 				} else {
 					return false;//user not group owner
 				}
@@ -418,5 +445,23 @@ public class GroupThread extends Thread {
 			return null;//user does not exist
 		}
 
+	}
+
+	/**
+	 * Writes an object to output. Will handle all encryption.
+	 *
+	 * @param      obj   The object
+	 *
+	 * @return     true if successful, false otherwise
+	 */
+	public boolean writeObjectToOutput(Serializable obj) {
+		try {
+			this.output.writeObject(EncryptionUtils.encrypt(DH_Key, obj));
+			return true;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+		}
+		return false;
 	}
 }

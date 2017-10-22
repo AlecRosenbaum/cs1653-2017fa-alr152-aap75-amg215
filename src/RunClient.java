@@ -35,6 +35,7 @@ public class RunClient {
         }
 
         // instantiate file client and group client
+        System.out.println("Connecting to group server...");
         GroupClient group_client = new GroupClient();
         if (group_client.connect(group_server_url, group_server_port)) {
             System.out.println("Connected to group server " + group_server_url + ":" + group_server_port);
@@ -42,6 +43,7 @@ public class RunClient {
             System.out.println("Unable to connect to group server " + group_server_url + ":" + group_server_port);
         }
 
+        System.out.println("Connecting to file server...");
         FileClient file_client = new FileClient();
         if (file_client.connect(file_server_url, file_server_port)) {
             System.out.println("Connected to file server " + file_server_url + ":" + file_server_port);
@@ -66,7 +68,7 @@ public class RunClient {
                              "Connected as " + mytoken.getSubject() + "\n" +
                              "Enter 'help' for help. \n\n"
                             );
-            
+
             // define common variables, then run main loop
             String input, groupName, userName, url, localFile, remoteFile;
             String[] inputArray;
