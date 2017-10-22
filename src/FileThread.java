@@ -52,7 +52,7 @@ public class FileThread extends Thread {
 
 			// Generate AES Secret Keys
 			this.DH_Key = bobKeyAgreement.generateSecret("AES");
-			System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
+			// System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
 
 			do {
 				Envelope e = (Envelope) readObjectFromInput();

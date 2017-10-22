@@ -53,7 +53,7 @@ public abstract class Client {
 
             // Generate AES Secret Keys
             this.DH_Key = aKeyAgreement.generateSecret("AES");
-            System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
+            // System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
 
             // success!
             return true;
