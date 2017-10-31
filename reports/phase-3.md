@@ -116,7 +116,7 @@ The Group Server will have a public key and associated private key used only to 
 
 The suggested protocol allows any third party to verify the integrity of a token issued by a trusted Group Server. SHA256 will be used to generate the hash of the token, as it is a widely used hash algorithm that does a good job of providing both pre-image and second pre-image resistance. This hash will then be transformed into a signature using the private key of the trusted Group Server. The transformation of the hash into a signature relies on RSA public-key cryptography. RSA's medium-term security with large (2048 - 4096 bits) keys is not disputed by the cryptography community, and it is assumed to be relatively secure. RSA's security relies on the difficulty of the discrete logarithm problem, for which there is no known efficient general solution. Finally, this signature can be verified by anyone, as the Group Server's public key is publicly known information and can be used to decrypt the signature into a verifiable hash.
 
-### T3 Unauthorized file servers
+### T3 - Unauthorized file servers
 
 #### Description
 
