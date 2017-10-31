@@ -116,28 +116,28 @@ The Group Server will have a public key and associated private key used only to 
 
 The suggested protocol allows any third party to verify the integrity of a token issued by a trusted Group Server. SHA256 will be used to generate the hash of the token, as it is a widely used hash algorithm that does a good job of providing both pre-image and second pre-image resistance. This hash will then be transformed into a signature using the private key of the trusted Group Server. The transformation of the hash into a signature relies on RSA public-key cryptography. RSA's medium-term security with large (2048 - 4096 bits) keys is not disputed by the cryptography community, and it is assumed to be relatively secure. RSA's security relies on the difficulty of the discrete logarithm problem, for which there is no known efficient general solution. Finally, this signature can be verified by anyone, as the Group Server's public key is publicly known information and can be used to decrypt the signature into a verifiable hash.
 
-### T3
+### T3 Unauthorized file servers
 
 #### Description
 
-The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a differet file server it can recieve the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. 
+The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a differet file server it can recieve the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. The following is an examble of how a malicious user M could exploit a system without a protection for this threat.
+
+* **B** -> **A**  **S** ``<connects to file server requests file, A intercepts>``
+* **A** -> **B** ``<provides fraudulent files>``
 
 #### Protection
 
-On the first connection from a user to a file server the file server will provide the user with its public key.  The user will save that locally. Then on any further communication with that file server the client will encrypt a large random number with that public key and send the encrypted message to the server. The server will then respond with the number that they decrypt with their private key. If the number matches the number that the client encrypted the client will know they have a secure connection.
+This threat will be protected through the use of a signed Diffie Hellman key exchange used in T4. The Protection section of T4 will explain the implementation of this exchange. The only thing that differs to ensure authorized file servers is that on initial connection the signature of the file server the user is connecting to must be approved by the user. All future connections will then be signed by the file servers RSA private key. 
 
-* Bob Connects to file server 1 for the first time.
-* **B** -> **S** ``<connects and requests token>``
-* File server 1 sends bob its public key.
+* Bob makes an inital connection to a file server **S**
+* **B** -> **S** ``<Initial connection>``
 * **S** -> **B** ``<public key>``
-* Bob connects with file server 1 sends it an encrypted message  of a random number with the public key.
-* **B** -> **S** ``<publickey(R1)>``
-* Server will send Bob R1 decrypted with its private key. If it's the right one then bob will be good to use the server.
-* **S** -> **B** ``<R1>``
+* Bob must then approve this public key via a prompt and that key will then be used when using signed Diffie Hellman exchanges in the futre.
+* Bob and **S** proceeed with signed Diffie Hellman exchange and symmetric key cryptographic communication can continue. If Bob ever recieves a (g^b) mod q from **S** that is not correctly signed and checked using the saved public key the client will sever connection with the server untill the next attempt at a signed Diffie Hellman exchange.
 
 #### Argument
 
-This protection will assure the user of the client that they are connecting to the file server they intend to connect to. They can be assured they are not uploading or downloading files from a different server by checking the file server's fingerprint. A malicious server will be unable to decrypt R1 and the client will disconnect and refuse to use a server without getting a new random number that it encrypts back. 
+This protection will assure the user of the client that they are connecting to the file server they intend to connect to. The key to the protection is that Bob has to approve the public key of the file server initally. After that it is impossible for an attacker to provide the correct signature in the Diffie Hellman exchange to convince Bob to create a shared key with him and communicate with the attacker.
 
 
 ### T4 - Information Leakage via Passive Monitoring
@@ -162,13 +162,13 @@ This threat model assumes the existence of passive attackers (e.g., nosy adminis
 
 #### Protection
 
-To protect against this threat model, we will utilize the Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a Diffie Hellman key exchange. This allows the client and server to agree on a new shared secret key before every interaction, and grants perfect forward secrecy. After the key exchange, all messages will be encrypted using AES with the symmetric, shared key. During application development, values g and q will be chosen and baked into the applications. Value q will be 2048 bits, and values a and b will be 224 bits. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
+To protect against this threat model, we will utilize a signed Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a  signed Diffie Hellman key exchange. These signatures are created using each actors RSA private keys and verified using their public keys. This allows the client and server to agree on a new shared secret key before every interaction, and grants perfect forward secrecy. This method also enables the user and server to ensure that they are each communicating with the entity they intend to be communicating with by verifying the signatures. After the key exchange, all messages will be encrypted using AES with the symmetric, shared key. During application development, values g and q will be chosen and baked into the applications. Value q will be 2048 bits, and values a and b will be 224 bits. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
 
 * Bob picks random value a.
-* **B** -> **S**: `(g^a) mod q`
-* Server picks random value b.
-* **S** -> **B**: `(g^b) mod q`
-* Bob and Server now have a shared key `K= g^(a*b) mod q`
+* **B** -> **S**: `[(g^a) mod q]signed by B`
+* Server validates signature picks random value b.
+* **S** -> **B**: `[(g^b) mod q]signed by S`
+* Bob validates signature and Bob and Server now have a shared key `K= g^(a*b) mod q`
 * **B** -> **S**: `{<message>}K`
 * **S** -> **B**: `{<message>}K`
 
