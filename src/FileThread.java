@@ -2,16 +2,20 @@
 
 import java.lang.Thread;
 import java.net.Socket;
-import java.util.List;
-import java.util.ArrayList;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.util.*;
+import java.security.*;
+import javax.crypto.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import javax.crypto.interfaces.DHPublicKey;
+import javax.crypto.spec.DHParameterSpec;
 
 public class FileThread extends Thread {
 	private final Socket socket;
+	private ObjectInputStream input;
+	private ObjectOutputStream output;
+	private SecretKey DH_Key;
 
 	public FileThread(Socket _socket) {
 		socket = _socket;
@@ -21,12 +25,37 @@ public class FileThread extends Thread {
 		boolean proceed = true;
 		try {
 			System.out.println("*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
-			final ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+			input = new ObjectInputStream(socket.getInputStream());
+			output = new ObjectOutputStream(socket.getOutputStream());
 			Envelope response;
 
+			// negotiate diffie hellman
+
+			// Exchange information for DH
+			KeyFactory clientKeyFac = KeyFactory.getInstance("DH");
+			byte[] DHinfo = (byte[]) input.readObject();
+			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(DHinfo);
+			PublicKey bobDHPub = clientKeyFac.generatePublic(x509KeySpec);
+
+			// Create Bob DH Keys
+			KeyPairGenerator bobKpGen = KeyPairGenerator.getInstance("DH");
+			DHParameterSpec dhParamSpec = ((DHPublicKey) bobDHPub).getParams();
+			bobKpGen.initialize(dhParamSpec);
+			KeyPair bobsKeys = bobKpGen.generateKeyPair();
+
+			KeyAgreement bobKeyAgreement = KeyAgreement.getInstance("DH");
+			bobKeyAgreement.init(bobsKeys.getPrivate());
+			bobKeyAgreement.doPhase(bobDHPub, true);
+
+			// Send Bob's DH Parameters to Alice
+			output.writeObject(bobsKeys.getPublic().getEncoded());
+
+			// Generate AES Secret Keys
+			this.DH_Key = bobKeyAgreement.generateSecret("AES");
+			// System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
+
 			do {
-				Envelope e = (Envelope)input.readObject();
+				Envelope e = (Envelope) readObjectFromInput();
 				System.out.println("Request received: " + e.getMessage());
 
 				// Handler to list files that this user is allowed to see
@@ -52,7 +81,7 @@ public class FileThread extends Thread {
 							// respond with a list of files: List<String>
 							response = new Envelope("OK"); //Success
 							response.addObject(fileNames);
-							output.writeObject(response);
+							writeObjectToOutput(response);
 						}
 					}
 				}
@@ -87,14 +116,14 @@ public class FileThread extends Thread {
 								System.out.printf("Successfully created file %s\n", remotePath.replace('/', '_'));
 
 								response = new Envelope("READY"); //Success
-								output.writeObject(response);
+								writeObjectToOutput(response);
 
-								e = (Envelope)input.readObject();
+								e = (Envelope) readObjectFromInput();
 								while (e.getMessage().compareTo("CHUNK") == 0) {
 									fos.write((byte[])e.getObjContents().get(0), 0, (Integer)e.getObjContents().get(1));
 									response = new Envelope("READY"); //Success
-									output.writeObject(response);
-									e = (Envelope)input.readObject();
+									writeObjectToOutput(response);
+									e = (Envelope) readObjectFromInput();
 								}
 
 								if (e.getMessage().compareTo("EOF") == 0) {
@@ -110,7 +139,7 @@ public class FileThread extends Thread {
 						}
 					}
 
-					output.writeObject(response);
+					writeObjectToOutput(response);
 				} else if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 
 					String remotePath = (String)e.getObjContents().get(0);
@@ -119,12 +148,12 @@ public class FileThread extends Thread {
 					if (sf == null) {
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);
 						e = new Envelope("ERROR_FILEMISSING");
-						output.writeObject(e);
+						writeObjectToOutput(e);
 
 					} else if (!t.getGroups().contains(sf.getGroup())) {
 						System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
 						e = new Envelope("ERROR_PERMISSION");
-						output.writeObject(e);
+						writeObjectToOutput(e);
 					} else {
 
 						try {
@@ -132,7 +161,7 @@ public class FileThread extends Thread {
 							if (!f.exists()) {
 								System.out.printf("Error file %s missing from disk\n", "_" + remotePath.replace('/', '_'));
 								e = new Envelope("ERROR_NOTONDISK");
-								output.writeObject(e);
+								writeObjectToOutput(e);
 
 							} else {
 								FileInputStream fis = new FileInputStream(f);
@@ -156,9 +185,9 @@ public class FileThread extends Thread {
 									e.addObject(buf);
 									e.addObject(new Integer(n));
 
-									output.writeObject(e);
+									writeObjectToOutput(e);
 
-									e = (Envelope)input.readObject();
+									e = (Envelope) readObjectFromInput();
 
 
 								} while (fis.available() > 0);
@@ -167,9 +196,9 @@ public class FileThread extends Thread {
 								if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 
 									e = new Envelope("EOF");
-									output.writeObject(e);
+									writeObjectToOutput(e);
 
-									e = (Envelope)input.readObject();
+									e = (Envelope) readObjectFromInput();
 									if (e.getMessage().compareTo("OK") == 0) {
 										System.out.printf("File data upload successful\n");
 									} else {
@@ -227,7 +256,7 @@ public class FileThread extends Thread {
 							e = new Envelope(e1.getMessage());
 						}
 					}
-					output.writeObject(e);
+					writeObjectToOutput(e);
 
 				} else if (e.getMessage().equals("DISCONNECT")) {
 					socket.close();
@@ -238,6 +267,41 @@ public class FileThread extends Thread {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 		}
+	}
+
+
+	/**
+	 * Reads an object from input. Will handle all encryption.
+	 *
+	 * @return     object from input, null if errored
+	 */
+	public Object readObjectFromInput() {
+		try {
+			return EncryptionUtils.decrypt(DH_Key, (byte[]) input.readObject());
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+		}
+		return null;
+	}
+
+
+	/**
+	 * Writes an object to output. Will handle all encryption.
+	 *
+	 * @param      obj   The object
+	 *
+	 * @return     true if successful, false otherwise
+	 */
+	public boolean writeObjectToOutput(Serializable obj) {
+		try {
+			this.output.writeObject(EncryptionUtils.encrypt(DH_Key, obj));
+			return true;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+		}
+		return false;
 	}
 
 }
