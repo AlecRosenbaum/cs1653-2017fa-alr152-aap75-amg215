@@ -59,7 +59,7 @@ The key agreement algorithm used to address these threat models will be Diffie H
 
 For this threat model, there is an assumption that clients are untrusted, and that illegitimate clients may try and request tokens from the group server.  Any illegitimate client who successfully obtains a token will undermine the security of the sever, and negate any worth of using tokens to access and modify groups and files.  A security breach via illegitimate token access from the group server would look similar to the following diagram: 
 
-* Unathorized Client(C) requests a token from Group Server(GS) with the username of owner of group g
+* Unauthorized Client(C) requests a token from Group Server(GS) with the username of owner of group g
 * **C** -> **GS**: `<token request>, group owner`
 * The Group Server provides the group owner's token 
 * **GS** -> **C**: `<token>`
@@ -67,7 +67,7 @@ For this threat model, there is an assumption that clients are untrusted, and th
 * **C** -> **FS**: `<deletes file f>, <token>`
 * Client uploads malicious file m with the same name as the deleted file f
 * **C** -> **FS**: `<upload file m>`
-* the Unathorized Client has just uploaded malicious file m to the server, which could be downloaded by any user assuming it is file f 
+* the Unauthorized Client has just uploaded malicious file m to the server, which could be downloaded by any user assuming it is file f 
 
 #### Protection
 
