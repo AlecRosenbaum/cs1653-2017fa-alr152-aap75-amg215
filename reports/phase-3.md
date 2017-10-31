@@ -35,7 +35,8 @@ Password: The password string
 Salt: The password salt, recommended to be at least 64 bits
 c: Iteration count, recommended to be at least 1024 
 dkLen: The length of the derived key, recommended to be at least 256 bits
-DK: The derived key```
+DK: The derived key
+```
 
 For example, the WiFi Protected Alliance II (WPA2) uses the following parameters
 ```
