@@ -120,7 +120,7 @@ The suggested protocol allows any third party to verify the integrity of a token
 
 #### Description
 
-The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a differet file server it can recieve the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. The following is an examble of how a malicious user M could exploit a system without a protection for this threat.
+The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a different file server it can receive the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. The following is an example of how a malicious user M could exploit a system without a protection for this threat.
 
 * **B** -> **A**  **S** ``<connects to file server requests file, A intercepts>``
 * **A** -> **B** ``<provides fraudulent files>``
@@ -129,15 +129,15 @@ The file server implementation must ensure that if a user attempts to contact so
 
 This threat will be protected through the use of a signed Diffie Hellman key exchange used in T4. The Protection section of T4 will explain the implementation of this exchange. The only thing that differs to ensure authorized file servers is that on initial connection the signature of the file server the user is connecting to must be approved by the user. All future connections will then be signed by the file servers RSA private key. 
 
-* Bob makes an inital connection to a file server **S**
+* Bob makes an initial connection to a file server **S**
 * **B** -> **S** ``<Initial connection>``
 * **S** -> **B** ``<public key>``
-* Bob must then approve this public key via a prompt and that key will then be used when using signed Diffie Hellman exchanges in the futre.
-* Bob and **S** proceeed with signed Diffie Hellman exchange and symmetric key cryptographic communication can continue. If Bob ever recieves a (g^b) mod q from **S** that is not correctly signed and checked using the saved public key the client will sever connection with the server untill the next attempt at a signed Diffie Hellman exchange.
+* Bob must then approve this public key via a prompt and that key will then be used when using signed Diffie Hellman exchanges in the future.
+* Bob and **S** proceed with signed Diffie Hellman exchange and symmetric key cryptographic communication can continue. If Bob ever receives a (g^b) mod q from **S** that is not correctly signed and checked using the saved public key the client will sever connection with the server until the next attempt at a signed Diffie Hellman exchange.
 
 #### Argument
 
-This protection will assure the user of the client that they are connecting to the file server they intend to connect to. The key to the protection is that Bob has to approve the public key of the file server initally. After that it is impossible for an attacker to provide the correct signature in the Diffie Hellman exchange to convince Bob to create a shared key with him and communicate with the attacker.
+This protection will assure the user of the client that they are connecting to the file server they intend to connect to. The key to the protection is that Bob has to approve the public key of the file server initially. After that it is impossible for an attacker to provide the correct signature in the Diffie Hellman exchange to convince Bob to create a shared key with him and communicate with the attacker.
 
 
 ### T4 - Information Leakage via Passive Monitoring
