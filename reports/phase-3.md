@@ -27,7 +27,8 @@ All public key cryptography used in addressing these threat models is implemente
 
 All hashing within the context of this application will be done using SHA-256. Current NIST standards indicate that SHA-256 provides sufficient security for Digital signatures and hash-only applications. In the case of storing user passwords, PBKDF2 will be used to create the password key, while SHA-256 will be used as the pseudorandom function.  For our use, PBKDF2 will apply the HMAC SHA-256 function to the user password and salt multiple times to create a derived key, which is a process known as key-stretching. As of January 2017, the Internet Engineering Task Force (IETF) recommends PBKDF2 as a password hashing algorithm[1].  The key derivation formula for PBKDF2 is as follows:
 
-```DK = PBKDF2(PRF, Password, Salt, c, dkLen)
+```
+DK = PBKDF2(PRF, Password, Salt, c, dkLen)
 
 PRF: underlying pseudorandom function
 Password: The password string
@@ -37,8 +38,9 @@ dkLen: The length of the derived key, recommended to be at least 256 bits
 DK: The derived key```
 
 For example, the WiFi Protected Alliance II (WPA2) uses the following parameters
-
-```DK = PBKDF2(HMAC−SHA1, passphrase, ssid, 4096, 256) ```
+```
+DK = PBKDF2(HMAC−SHA1, passphrase, ssid, 4096, 256)
+```
 
 ### Key Agreement
 
