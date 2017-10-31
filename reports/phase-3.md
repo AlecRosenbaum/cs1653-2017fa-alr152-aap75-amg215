@@ -12,7 +12,46 @@
     - aap75@pitt.edu
     - aadupirn
 
-## Threats to Protect Against
+
+## Cryptographic Mechanisms and Protocols
+
+### Symmetric Key Cryptography
+
+The Symmetric Key Cryptography algorithm used in addressing these threat models is AES-128. AES-128 utilizes a 128-bit key, and is considered sufficiently secure according to NIST standards published in 2016, as summarized by https://www.keylength.com/en/4/. 
+
+### Public Key Cryptography
+
+All public key cryptography used in addressing these threat models is implemented using RSA. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for algorithms based on discrete logarithms.
+
+### Hashing Functions
+
+All hashing within the context of this application will be done using SHA-256. Current NIST standards indicate that SHA-256 provides sufficient security for Digital signatures and hash-only applications. 
+
+### Key Agreement
+
+The key agreement algorithm used to address these threat models will be Diffie Hellman. Diffie Hellman exchanges allow securely exchanging cryptographic keys over a public channel. Security of this exchange is based on discrete logarithms. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for modern applications. This application will utilize the prime and generator values for the 2048-bit MODP Group as specified by RFC3526, available at https://www.ietf.org/rfc/rfc3526.txt, and quoted below.
+
+```
+   This prime is: 2^2048 - 2^1984 - 1 + 2^64 * { [2^1918 pi] + 124476 }
+
+   Its hexadecimal value is:
+
+      FFFFFFFF FFFFFFFF C90FDAA2 2168C234 C4C6628B 80DC1CD1
+      29024E08 8A67CC74 020BBEA6 3B139B22 514A0879 8E3404DD
+      EF9519B3 CD3A431B 302B0A6D F25F1437 4FE1356D 6D51C245
+      E485B576 625E7EC6 F44C42E9 A637ED6B 0BFF5CB6 F406B7ED
+      EE386BFB 5A899FA5 AE9F2411 7C4B1FE6 49286651 ECE45B3D
+      C2007CB8 A163BF05 98DA4836 1C55D39A 69163FA8 FD24CF5F
+      83655D23 DCA3AD96 1C62F356 208552BB 9ED52907 7096966D
+      670C354E 4ABC9804 F1746C08 CA18217C 32905E46 2E36CE3B
+      E39E772C 180E8603 9B2783A2 EC07A28F B5C55DF0 6F4C52C9
+      DE2BCBF6 95581718 3995497C EA956AE5 15D22618 98FA0510
+      15728E5A 8AACAA68 FFFFFFFF FFFFFFFF
+
+   The generator is: 2.
+```
+
+## Threats
 
 ### T1 - Unauthorized Token Issuance
 
@@ -20,7 +59,7 @@
 
 For this threat model, there is an assumption that clients are untrusted, and that illegitimate clients may try and request tokens from the group server.  Any illegitimate client who successfully obtains a token will undermine the security of the sever, and negate any worth of using tokens to access and modify groups and files.  A security breach via illegitimate token access from the group server would look similar to the following diagram: 
 
-* Unathorized Client(C) requests a token from Group Server(GS) with the username of owner of group g
+* Unauthorized Client(C) requests a token from Group Server(GS) with the username of owner of group g
 * **C** -> **GS**: `<token request>, group owner`
 * The Group Server provides the group owner's token 
 * **GS** -> **C**: `<token>`
@@ -28,7 +67,7 @@ For this threat model, there is an assumption that clients are untrusted, and th
 * **C** -> **FS**: `<deletes file f>, <token>`
 * Client uploads malicious file m with the same name as the deleted file f
 * **C** -> **FS**: `<upload file m>`
-* the Unathorized Client has just uploaded malicious file m to the server, which could be downloaded by any user assuming it is file f 
+* the Unauthorized Client has just uploaded malicious file m to the server, which could be downloaded by any user assuming it is file f 
 
 #### Protection
 
@@ -81,21 +120,25 @@ The suggested protocol allows any third party to verify the integrity of a token
 
 #### Description
 
-The file server implementation must ensure that if a user attempts to contact
-some server, s, then they actually connect to s and not some other server.
+The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a different file server it can receive the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. 
 
 #### Protection
 
-We will mirror ssh's implementation to solve this issue. On the first connection from a user to a file server the file server will provide the user with a hash of its public key called a fingerprint. This hash will be a SHA256 hash that should be secure for the foreseeable future. The user will save that locally. Then on any further communication with that file server the file server will provide the user with that fingerprint. If it doesn't match to the fingerprint the user expects the user will be alerted and disconnected from the file server.
+On the first connection from a user to a file server the file server will provide the user with its public key.  The user will save that locally. Then on any further communication with that file server the client will encrypt a large random number with that public key and send the encrypted message to the server. The server will then respond with the number that they decrypt with their private key. If the number matches the number that the client encrypted the client will know they have a secure connection.
 
 * Bob Connects to file server 1 for the first time.
-* B -> S ``<connects and requests token>``
-* File server 1 sends bob its fingerprint.
-* S -> B ``SHA256(key)``
-* Bob connects with file server 1 and requests its fingerprint.
-* B -> S ``<fingerprint request>``
-* Server will send Bob a fingerprint. If it's the right one then bob will be good to use the server.
-* S -> B ``<fingerprint>``
+* **B** -> **S** ``<connects and requests token>``
+* File server 1 sends bob its public key.
+* **S** -> **B** ``<public key>``
+* Bob connects with file server 1 sends it an encrypted message  of a random number with the public key.
+* **B** -> **S** ``<publickey(R1)>``
+* Server will send Bob R1 decrypted with its private key. If it's the right one then bob will be good to use the server.
+* **S** -> **B** ``<R1>``
+
+#### Argument
+
+This protection will assure the user of the client that they are connecting to the file server they intend to connect to. They can be assured they are not uploading or downloading files from a different server by checking the file server's fingerprint. A malicious server will be unable to decrypt R1 and the client will disconnect and refuse to use a server without getting a new random number that it encrypts back. 
+
 
 ### T4 - Information Leakage via Passive Monitoring
 
@@ -133,3 +176,7 @@ To protect against this threat model, we will utilize the Diffie Hellman key exc
 #### Argument
 
 The suggested protocol specifies an implementation of the Diffie-Hellman key exchange protocol. Diffie-Hellman is a well-known method for securely agreeing on a cryptographic key over a public channel. Diffie-Hellman's security properties rely on the difficulty of solving the discrete logarithm problem, which has no known efficient general solution. After a shared key is agreed upon, communications will be secured by encrypting message contents with AES and the shared key.
+
+## Conclusion
+
+Describe mechanism interplay, design process, etc
