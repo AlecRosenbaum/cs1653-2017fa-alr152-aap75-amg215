@@ -105,7 +105,7 @@ Because there is an assumption that clients are not trustworthy, all clients (C)
 
 #### Argument
 
-The suggested protocol gives a secure level of protection against unauthorized clients attempting to access the file system illegitimately.  By having the group server create a random password and forcing the administrator to directly communicate it to the authorized client in person there are few ways for an attacker to obtain the random password.  As for the authorized client's permanent password, as for all password based security systems, part of the responsibility lies on the client to create a password that cannot be easily guessed by an attacker.   
+The suggested protocol gives a secure level of protection against unauthorized clients attempting to access the file system illegitimately.  By having the group server create a random password and forcing the administrator to directly communicate it to the authorized client in person there are few ways for an attacker to obtain the random password.  As for the authorized client's permanent password, as for all password based security systems, part of the responsibility lies on the client to create a password that cannot be easily guessed by an attacker.  The use of PBKDF2 also provides added benifit against dictionary and brute force attacks.  Protection against dictionary attacks comes from the use of a unique salt for every individual password, which forces the hash dictionary to be recomputed for every sought password.  This is compounded by the fact that PBKDF2 performs the SHA-256 encryption over multiple iterations, which although slower, provides extra resistence from a brute force attack.  
 
 ### T2 - Token Modification/Forgery
 
