@@ -17,7 +17,7 @@
 
 ### Symmetric Key Cryptography
 
-The Symmetric Key Cryptography algorithm used in addressing these threat models is AES-128. AES-128 utilizes a 128-bit key, and is considered sufficiently secure according to NIST standards published in 2016, as summarized by https://www.keylength.com/en/4/. 
+The Symmetric Key Cryptography algorithm used in addressing these threat models is AES-128. AES-128 utilizes a 128-bit key, and is considered sufficiently secure according to NIST standards published in 2016[1]. 
 
 ### Public Key Cryptography
 
@@ -25,7 +25,7 @@ All public key cryptography used in addressing these threat models is implemente
 
 ### Hashing Functions
 
-All hashing within the context of this application will be done using SHA-256. Current NIST standards indicate that SHA-256 provides sufficient security for Digital signatures and hash-only applications. In the case of storing user passwords, PBKDF2 will be used to create the password key, while SHA-256 will be used as the pseudorandom function.  For our use, PBKDF2 will apply the HMAC SHA-256 function to the user password and salt multiple times to create a derived key, which is a process known as key-stretching. As of January 2017, the Internet Engineering Task Force (IETF) recommends PBKDF2 as a password hashing algorithm[1].  The key derivation formula for PBKDF2 is as follows:
+All hashing within the context of this application will be done using SHA-256. Current NIST standards indicate that SHA-256 provides sufficient security for Digital signatures and hash-only applications. In the case of storing user passwords, PBKDF2 will be used to create the password key, while SHA-256 will be used as the pseudorandom function.  For our use, PBKDF2 will apply the HMAC SHA-256 function to the user password and salt multiple times to create a derived key, which is a process known as key-stretching. As of January 2017, the Internet Engineering Task Force (IETF) recommends PBKDF2 as a password hashing algorithm[2].  The key derivation formula for PBKDF2 is as follows:
 
 ```
 DK = PBKDF2(PRF, Password, Salt, c, dkLen)
@@ -45,7 +45,7 @@ DK = PBKDF2(HMAC−SHA1, passphrase, ssid, 4096, 256)
 
 ### Key Agreement
 
-The key agreement algorithm used to address these threat models will be Diffie Hellman. Diffie Hellman exchanges allow securely exchanging cryptographic keys over a public channel. Security of this exchange is based on discrete logarithms. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for modern applications. This application will utilize the prime and generator values for the 2048-bit MODP Group as specified by RFC3526, available at https://www.ietf.org/rfc/rfc3526.txt, and quoted below.
+The key agreement algorithm used to address these threat models will be Diffie Hellman. Diffie Hellman exchanges allow securely exchanging cryptographic keys over a public channel. Security of this exchange is based on discrete logarithms. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for modern applications. This application will utilize the prime and generator values for the 2048-bit MODP Group as specified by RFC3526[3] and quoted below.
 
 ```
    This prime is: 2^2048 - 2^1984 - 1 + 2^64 * { [2^1918 pi] + 124476 }
@@ -198,5 +198,8 @@ The suggested protocol specifies an implementation of the Diffie-Hellman key exc
 Describe mechanism interplay, design process, etc
 
 ## References
+[1]Giry, Damien. Keylength - NIST Report on Cryptographic Key Length and Cryptoperiod (2016), NIST, www.keylength.com/en/4/.
 
-[1]Kaliski, B., and A. Rusch. “PKCS #5: Password-Based Cryptography Specification Version 2.1.” Edited by K. Moriarty, IETF Tools, Internet Engineering Task Force (IETF), Jan. 2017, tools.ietf.org/html/rfc8018.
+[2]Kaliski, B., and A. Rusch. “PKCS #5: Password-Based Cryptography Specification Version 2.1.” Edited by K. Moriarty, IETF Tools, Internet Engineering Task Force (IETF), Jan. 2017, tools.ietf.org/html/rfc8018.
+
+[3]Kivinen, T. More Modular Exponential (MODP) Diffie-Hellman Groups for Internet Key Exchange (IKE). Internet Engineering Task Force (IETF), May 2003, www.ietf.org/rfc/rfc3526.txt.
