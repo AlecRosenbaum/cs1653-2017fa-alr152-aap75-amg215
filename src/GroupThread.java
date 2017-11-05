@@ -249,7 +249,16 @@ public class GroupThread extends Thread {
 		//Check that user exists
 		if (my_gs.userList.checkUser(username)) {
 			//Issue a new token with server's name, user's name, and user's groups
-			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username));
+			Token yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username));
+
+			// Sign token 
+			try {
+				yourToken.setSignature(my_gs.sign(yourToken.stringify()));
+			} catch (Exception e) {
+				System.err.println("Error signing token.");
+				e.printStackTrace(System.err);
+			}
+			
 			return yourToken;
 		} else {
 			return null;

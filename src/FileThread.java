@@ -14,12 +14,14 @@ import java.math.BigInteger;
 
 public class FileThread extends Thread {
 	private final Socket socket;
+	private final FileServer my_fs;
 	private ObjectInputStream input;
 	private ObjectOutputStream output;
 	private SecretKey DH_Key;
 
-	public FileThread(Socket _socket) {
+	public FileThread(Socket _socket, FileServer _fs) {
 		socket = _socket;
+		my_fs = _fs;
 	}
 
 	public void run() {
@@ -31,23 +33,23 @@ public class FileThread extends Thread {
 			Envelope response;
 
 			// negotiate diffie hellman
-			
+
 			// Generate DH specs (2048-bit p, 224 bit key)
-            String p_hex = 
-                "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
-                "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
-                "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
-                "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED" +
-                "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3D" +
-                "C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F" +
-                "83655D23DCA3AD961C62F356208552BB9ED529077096966D" +
-                "670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B" +
-                "E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9" +
-                "DE2BCBF6955817183995497CEA956AE515D2261898FA0510" +
-                "15728E5A8AACAA68FFFFFFFFFFFFFFFF";            
-            BigInteger p = new BigInteger(p_hex, 16);
-            BigInteger g = BigInteger.valueOf(2);
-            DHParameterSpec dhParamSpec = new DHParameterSpec(p, g, 224);
+			String p_hex =
+			    "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
+			    "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
+			    "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
+			    "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED" +
+			    "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3D" +
+			    "C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F" +
+			    "83655D23DCA3AD961C62F356208552BB9ED529077096966D" +
+			    "670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B" +
+			    "E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9" +
+			    "DE2BCBF6955817183995497CEA956AE515D2261898FA0510" +
+			    "15728E5A8AACAA68FFFFFFFFFFFFFFFF";
+			BigInteger p = new BigInteger(p_hex, 16);
+			BigInteger g = BigInteger.valueOf(2);
+			DHParameterSpec dhParamSpec = new DHParameterSpec(p, g, 224);
 
 			// Exchange information for DH
 			KeyFactory clientKeyFac = KeyFactory.getInstance("DH");
@@ -85,11 +87,16 @@ public class FileThread extends Thread {
 							response = new Envelope("FAIL-BADTOKEN");
 						} else {
 							// token contains user, server, and groups
-							UserToken yourToken = (UserToken)e.getObjContents().get(0); //Extract token
-							
+							Token yourToken = (Token)e.getObjContents().get(0); //Extract token
+							if (!EncryptionUtils.verify(yourToken.getSignature(), yourToken.stringify(), my_fs.trustedPubKey)) {
+								response = new Envelope("FAIL-INVALID-TOKEN");
+								writeObjectToOutput(response);
+								continue;
+							}
+
 							// check files for files in groups that user is a part of
 							ArrayList<String> fileNames = new ArrayList<String>();
-							for (ShareFile f: FileServer.fileList.getFiles()) {
+							for (ShareFile f : FileServer.fileList.getFiles()) {
 								if (yourToken.getGroups().contains(f.getGroup())) {
 									fileNames.add(f.getPath());
 								}
@@ -118,7 +125,12 @@ public class FileThread extends Thread {
 						} else {
 							String remotePath = (String)e.getObjContents().get(0);
 							String group = (String)e.getObjContents().get(1);
-							UserToken yourToken = (UserToken)e.getObjContents().get(2); //Extract token
+							Token yourToken = (Token)e.getObjContents().get(2); //Extract token
+							if (!EncryptionUtils.verify(yourToken.getSignature(), yourToken.stringify(), my_fs.trustedPubKey)) {
+								response = new Envelope("FAIL-INVALID-TOKEN");
+								writeObjectToOutput(response);
+								continue;
+							}
 
 							if (FileServer.fileList.checkFile(remotePath)) {
 								System.out.printf("Error: file already exists at %s\n", remotePath);
@@ -161,6 +173,12 @@ public class FileThread extends Thread {
 
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
+					if (!EncryptionUtils.verify(t.getSignature(), t.stringify(), my_fs.trustedPubKey)) {
+						response = new Envelope("FAIL-INVALID-TOKEN");
+						writeObjectToOutput(response);
+						continue;
+					}
+
 					ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
 					if (sf == null) {
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);
@@ -240,6 +258,11 @@ public class FileThread extends Thread {
 
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
+					if (!EncryptionUtils.verify(t.getSignature(), t.stringify(), my_fs.trustedPubKey)) {
+						response = new Envelope("FAIL-INVALID-TOKEN");
+						writeObjectToOutput(response);
+						continue;
+					}
 					ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
 					if (sf == null) {
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);
