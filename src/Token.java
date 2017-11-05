@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.StringJoiner;
 
 
 public class Token implements java.io.Serializable, UserToken {
@@ -10,12 +11,14 @@ public class Token implements java.io.Serializable, UserToken {
     private String issuer;
     private String subject;
     private ArrayList<String> groups = new ArrayList<String>();
+    private byte[] signature;
 
     // my_gs.name, subject, my_gs.userList.getUserGroups(subject)
     public Token(String issuer, String subject, ArrayList<String> groups) {
         this.issuer = issuer;
         this.subject = subject;
         this.groups = groups;
+        this.signature = null;
     }
 
     /**
@@ -58,6 +61,27 @@ public class Token implements java.io.Serializable, UserToken {
      */
     public ArrayList<String> getGroups() {
         return groups;
+    }
+
+    /**
+     * Dump token contents into a basic string
+     *
+     * @return     String representation of the token
+     */
+    public String stringify() {
+        StringJoiner allGroups = new StringJoiner(",", subject + ";", "");
+        for (String group: groups) {
+            allGroups.add(group);
+        }
+        return allGroups.toString();
+    }
+
+    public void setSignature(byte[] signature) {
+        this.signature = signature;
+    }
+
+    public byte[] getSignature() {
+        return this.signature;
     }
 
 }
