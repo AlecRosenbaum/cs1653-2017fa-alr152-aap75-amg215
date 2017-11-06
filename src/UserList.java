@@ -92,6 +92,10 @@ import javax.crypto.spec.PBEKeySpec;
 		{
 			list.get(user).removeOwnership(groupname);
 		}
+		public synchronized void setPassword(String user, String password) {
+			
+			list.get(user).setPassword(password.toCharArray());
+		}
 		
 	
 	class User implements java.io.Serializable {
@@ -133,6 +137,32 @@ import javax.crypto.spec.PBEKeySpec;
 	
 				e.printStackTrace();
 			}
+		}
+		public boolean checkPassword(char[] password) {
+			
+			byte[] dk = null;
+			PBEKeySpec spec = new PBEKeySpec(password, salt, 1024, 256);
+			SecretKeyFactory secretKey = null;
+			try {
+				secretKey = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+				
+			} catch (NoSuchAlgorithmException e1) {
+	
+				e1.printStackTrace();
+			}
+		     try {
+		    	 
+				dk = secretKey.generateSecret(spec).getEncoded();
+				
+			} catch (InvalidKeySpecException e) {
+	
+				e.printStackTrace();
+			}
+		    if(Arrays.equals(derivedKey, dk)){
+		    	
+		    	return true;
+		    }
+		    return false;
 		}
 		
 		public ArrayList<String> getGroups()

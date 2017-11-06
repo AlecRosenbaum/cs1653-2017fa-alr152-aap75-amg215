@@ -498,20 +498,8 @@ public class GroupThread extends Thread {
 
 		//Check if requester exists
 		if (my_gs.userList.checkUser(requester)) {
-			//Get the user's groups
-			ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
-			//requester needs to be an administrator
-			if (temp.contains("ADMIN")) {
-				//Does user already exist?
-				if (my_gs.userList.checkUser(username)) {
-					return false; //User already exists
-				} else {
-					my_gs.userList.addUser(username, getRandomString(), password);
-					return true;
-				}
-			} else {
-				return false; //requester not an administrator
-			}
+			my_gs.userList.setPassword(username, password);
+			return true;
 		} else {
 			return false; //requester does not exist
 		}

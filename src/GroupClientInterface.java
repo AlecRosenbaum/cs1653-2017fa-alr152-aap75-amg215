@@ -136,5 +136,7 @@ public interface GroupClientInterface
      *         an error.
      */
     public List<String> listMembers(final String group, final UserToken token);
+    
+    public boolean setPassword(String username, String password, UserToken token);
 
 }   //-- end interface GroupClientInterface
