@@ -3,9 +3,12 @@ import java.util.ArrayList;
 import java.io.*;
 import java.security.PublicKey;
 import java.util.*;
+import java.lang.*;
 
 
 public class RunClient {
+
+    private static String fileServersPath = "APPROVED_FILE_SERVERS.bin";
 
     public static void main(String[] args) {
         // args:
@@ -24,7 +27,21 @@ public class RunClient {
         String group_server_url = args[0];;
         int group_server_port;
         String file_server_url = args[2];
-        int file_server_port;
+        int file_server_port;        
+        ApprovedFileServerList approvedFileServers = new ApprovedFileServerList();
+        try {
+            File approvedFileServersFile = new File(fileServersPath);
+            if(approvedFileServersFile.exists() && !approvedFileServersFile.isDirectory()) { 
+                FileInputStream fis = new FileInputStream(fileServersPath);
+                ObjectInputStream fileStream = new ObjectInputStream(fis);
+                approvedFileServers = (ApprovedFileServerList)fileStream.readObject();
+            }
+        } catch(Exception e) {
+            System.out.println("Error loading approved files.");            
+            System.out.println(e.getCause());
+            return;
+        }
+        
         try  {
             group_server_port = Integer.parseInt(args[1]);
             file_server_port = Integer.parseInt(args[3]);
@@ -46,12 +63,30 @@ public class RunClient {
 
         System.out.println("Connecting to file server...");
         FileClient file_client = new FileClient();
-        if (file_client.connect(file_server_url, file_server_port, null)) {
-            System.out.println("Connected to file server " + file_server_url + ":" + file_server_port);
-        } else {
-            System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
+        FileClient new_file_client = new FileClient();
+        PublicKey fileServerPublicKey = approvedFileServers.checkServer(file_server_url, file_server_port);
+        boolean connectToFileServer = true;
+        if(fileServerPublicKey == null) {
+            fileServerPublicKey = new_file_client.initialConnect(file_server_url, file_server_port);
+            System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.getEncoded() + "\n\n" +
+            "Entery 'Y' to accept or 'N' to reject: ");
+            if(console.nextLine().toUpperCase().equals("Y")) {
+                approvedFileServers.addServer(fileServerPublicKey, file_server_url, file_server_port);
+                new_file_client = new FileClient();
+            }else {
+                System.out.println("File Server Public Key NOT approved.");
+                connectToFileServer = false;
+            }
         }
-
+        if(connectToFileServer){
+            if (new_file_client.connect(file_server_url, file_server_port, fileServerPublicKey)) {
+                System.out.println("Connected to file server " + file_server_url + ":" + file_server_port);
+                file_client = new_file_client;
+            } else {
+                System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
+            }
+        }
+        
         System.out.print("Enter user name: ");
         String u = console.nextLine();
         UserToken mytoken = group_client.getToken(u);
@@ -120,26 +155,30 @@ public class RunClient {
                                          "\t\tLists all users in given group.\n\n"
                                         );
                         break;
-                    case "fconnect":
-                        
+                    case "fconnect":                        
                         url = inputArray[1];
                         port = Integer.parseInt(inputArray[2]);
-                        FileClient new_file_client = new FileClient();
-                        PublicKey fileServerPublicKey = new_file_client.initialConnect(url, port);
-                        System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.getEncoded() + "\n\n" +
-                        "Entery 'Y' to accept or 'N' to reject: ");
-                        if(console.next().toUpperCase().equals("Y")) {
-                            new_file_client = new FileClient();
-                            if (new_file_client.connect(url, port, fileServerPublicKey)) {
-                                System.out.println("Connected to file server " + url + ":" + port);
-                                file_client = new_file_client;
-                                file_server_url = url;
-                                file_server_port = port;
-                            } else {
-                                System.out.println("Unable to connect to file server " + url + ":" + port);
+                        new_file_client = new FileClient();
+                        fileServerPublicKey = approvedFileServers.checkServer(url, port);
+                        if(fileServerPublicKey == null) {
+                            fileServerPublicKey = new_file_client.initialConnect(url, port);
+                            System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.getEncoded() + "\n\n" +
+                            "Entery 'Y' to accept or 'N' to reject: ");
+                            if(console.nextLine().toUpperCase().equals("Y")) {
+                                approvedFileServers.addServer(fileServerPublicKey, url, port);
+                                new_file_client = new FileClient();
+                            }else {
+                                System.out.println("File Server Public Key NOT approved.");
+                                break;
                             }
-                        }else {
-                            System.out.println("File Server Public Key NOT approved.");
+                        }
+                        if (new_file_client.connect(url, port, fileServerPublicKey)) {
+                            System.out.println("Connected to file server " + url + ":" + port);
+                            file_client = new_file_client;
+                            file_server_url = url;
+                            file_server_port = port;
+                        } else {
+                            System.out.println("Unable to connect to file server " + url + ":" + port);
                         }
                         break;
                     case "fdisconnect":
@@ -353,9 +392,50 @@ public class RunClient {
             group_client.disconnect();
             file_client.disconnect();
         }
-
-
     }
 
+    public void backup() {
+        
+    }
+}
 
+class ApprovedFileServerList implements java.io.Serializable {
+    private static final long serialVersionUID = -8911161283900345136L;
+    ArrayList<PublicKey> pks;
+    ArrayList<String> urls;
+    ArrayList<Integer> ports;
+    private static String fileServersPath = "APPROVED_FILE_SERVERS.bin";
+
+    public ApprovedFileServerList () {
+        pks = new ArrayList<PublicKey>();
+        urls = new ArrayList<String>();
+        ports = new ArrayList<Integer>();
+    }
+
+    public void addServer(PublicKey new_pk, String new_url, int new_port) {
+        pks.add(new_pk);
+        urls.add(new_url);
+        ports.add(new Integer(new_port));
+        backup();
+    }
+
+    public PublicKey checkServer(String url, int port) {
+        if(urls.contains(url) && ports.contains(new Integer(port)))
+        {
+            if(urls.indexOf(url) == ports.indexOf(new Integer(port))) {
+                return pks.get(urls.indexOf(url));
+            }
+        }
+        return null;
+    }
+
+    public void backup() {
+        try {
+            ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(fileServersPath));
+            outStream.writeObject(this);
+        } catch(Exception e) {
+            System.out.println("Error backing up approved files");
+        }
+        
+    }
 }

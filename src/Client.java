@@ -65,10 +65,6 @@ public abstract class Client {
                     System.out.println("Invalid signature, aborting connection.");
                     return false;
                 }
-                else {
-                    System.out.println("Accepted Signature");
-                }
-
             }
 
             KeyFactory clientKeyFac = KeyFactory.getInstance("DH");
