@@ -52,6 +52,16 @@ public class RunClient {
 
         System.out.print("Enter user name: ");
         String u = console.nextLine();
+        System.out.println("Please enter your password: ");
+		String password = console.next();
+		if(group_client.checkPassword(u, password) == false) {
+			int tries = 4;
+			do {
+				System.out.println("Password Incorrect, you have " + tries + "more attempts before being locked out" );
+				password = console.next();
+				
+			}while(group_client.checkPassword(u, password) == false && tries > 0);
+		}
         UserToken mytoken = group_client.getToken(u);
         if (mytoken == null) {
             System.out.println("Login Unsuccessful");

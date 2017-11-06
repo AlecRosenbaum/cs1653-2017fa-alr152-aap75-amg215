@@ -96,6 +96,17 @@ import javax.crypto.spec.PBEKeySpec;
 			
 			list.get(user).setPassword(password.toCharArray());
 		}
+		public synchronized boolean checkPassword(String user, String password) {
+			
+			if(list.get(user).checkPassword(password.toCharArray())) {
+				
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
 		
 	
 	class User implements java.io.Serializable {

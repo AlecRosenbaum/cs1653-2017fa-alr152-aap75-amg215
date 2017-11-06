@@ -137,6 +137,20 @@ public interface GroupClientInterface
      */
     public List<String> listMembers(final String group, final UserToken token);
     
+    
+    
+    /**
+     * Sets the password for the user. Any user can set their password at any
+     * time so long as they are an existing user.  This method is automatically called
+     * when a new user is created
+     *
+     * @param username user requesting to set their password
+     * @param token The token of the user requesting the change
+     * @param password the new password
+     * 
+     * @return True if password is set      
+     *         
+     */
     public boolean setPassword(String username, String password, UserToken token);
 
 }   //-- end interface GroupClientInterface

@@ -286,5 +286,35 @@ public class GroupClient extends Client implements GroupClientInterface {
 				return false;
 			}
 	 }
+	 public boolean checkPassword(String username, String password) {
+		 
+		 try
+			{
+				Envelope message = null, response = null;
+				//Tell the server to create a user
+				message = new Envelope("CHECKPASS");
+				message.addObject(username); //Add user name string
+				message.addObject(password);//Add the user's new password token
+				this.writeObjectToOutput(message);
+			
+				
+				response = (Envelope) this.readObjectFromInput();
+				
+				//If server indicates success, return true
+				if(response.getMessage().equals("OK"))
+				{
+					return true;
+				}
+				
+				
+				return false;
+			}
+			catch(Exception e)
+			{
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+				return false;
+			}
+	 }
 
 }

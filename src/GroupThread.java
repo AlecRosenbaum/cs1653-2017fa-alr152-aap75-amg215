@@ -504,6 +504,21 @@ public class GroupThread extends Thread {
 			return false; //requester does not exist
 		}
 	}
+	private boolean checkPassword(String username, String password) {
+		String requester = username;
+
+		//Check if requester exists
+		if (my_gs.userList.checkUser(requester)) {
+			if(my_gs.userList.checkPassword(username, password)) {
+				return true;
+			
+			} else {
+				return false;
+			}
+		} else {
+			return false; //requester does not exist
+		}
+	}
 
 	/**
 	 * Writes an object to output. Will handle all encryption.
