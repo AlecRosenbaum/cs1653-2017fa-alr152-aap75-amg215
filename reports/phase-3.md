@@ -1,4 +1,3 @@
-
 # Phase 3 Writeup
 
 ## Group Information
