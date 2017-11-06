@@ -422,10 +422,6 @@ public class RunClient {
             file_client.disconnect();
         }
     }
-
-    public void backup() {
-        
-    }
 }
 
 class ApprovedFileServerList implements java.io.Serializable {
