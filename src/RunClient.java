@@ -1,6 +1,7 @@
 /* Driver program for Client */
 import java.util.ArrayList;
 import java.io.*;
+import java.security.PublicKey;
 import java.util.*;
 
 
@@ -120,16 +121,26 @@ public class RunClient {
                                         );
                         break;
                     case "fconnect":
+                        
                         url = inputArray[1];
                         port = Integer.parseInt(inputArray[2]);
                         FileClient new_file_client = new FileClient();
-                        if (new_file_client.connect(url, port)) {
-                            System.out.println("Connected to file server " + url + ":" + port);
-                            file_client = new_file_client;
-                            file_server_url = url;
-                            file_server_port = port;
-                        } else {
-                            System.out.println("Unable to connect to file server " + url + ":" + port);
+                        PublicKey fileServerPublicKey = new_file_client.initialConnect(url, port);
+                        System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.getEncoded() + "\n\n" +
+                        "Entery 'Y' to accept or 'N' to reject: ");
+                        String verifyAns = console.next();
+                        if(verifyAns.toUpperCase().equals("Y")) {
+                            new_file_client = new FileClient();
+                            if (new_file_client.connect(url, port)) {
+                                System.out.println("Connected to file server " + url + ":" + port);
+                                file_client = new_file_client;
+                                file_server_url = url;
+                                file_server_port = port;
+                            } else {
+                                System.out.println("Unable to connect to file server " + url + ":" + port);
+                            }
+                        }else {
+                            System.out.println("File Server Public Key NOT approved.");
                         }
                         break;
                     case "fdisconnect":

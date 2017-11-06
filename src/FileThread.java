@@ -53,7 +53,20 @@ public class FileThread extends Thread {
 
 			// Exchange information for DH
 			KeyFactory clientKeyFac = KeyFactory.getInstance("DH");
-			byte[] DHinfo = (byte[]) input.readObject();
+			Object inputMessage = input.readObject();
+			byte[] DHinfo = null;
+			try {
+				DHinfo = (byte[]) inputMessage;
+			}
+			catch (Exception e)
+			{				
+				if("key request".equals((String)inputMessage)) {
+					output.writeObject(my_fs.getPublicKey());
+					System.out.println("Providing Public Key for Initial Authentication.");
+					return;
+				}
+			}
+
 			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(DHinfo);
 			PublicKey bobDHPub = clientKeyFac.generatePublic(x509KeySpec);
 
