@@ -1,5 +1,6 @@
 
 import java.util.List;
+import java.security.*;
 
 /**
  * Interface describing the operations that must be supported by the
@@ -19,7 +20,7 @@ public interface FileClientInterface
      * @return true if the connection succeeds, false otherwise
      *
      */
-    public boolean connect(final String server, final int port);
+    public boolean connect(final String server, final int port, PublicKey serverPublicKey);
 
 
     /**

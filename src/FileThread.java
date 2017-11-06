@@ -79,8 +79,14 @@ public class FileThread extends Thread {
 			bobKeyAgreement.init(bobsKeys.getPrivate());
 			bobKeyAgreement.doPhase(bobDHPub, true);
 
+			Signature privateSignature = Signature.getInstance("SHA256withRSA");
+			privateSignature.initSign(my_fs.getPrivateKey());
+			privateSignature.update(bobsKeys.getPublic().getEncoded());		
+			byte[] signature = privateSignature.sign();
+
 			// Send Bob's DH Parameters to Alice
 			output.writeObject(bobsKeys.getPublic().getEncoded());
+			output.writeObject(signature);
 
 			// Generate AES Secret Keys
 			this.DH_Key = bobKeyAgreement.generateSecret("AES");

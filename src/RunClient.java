@@ -38,7 +38,7 @@ public class RunClient {
         // instantiate file client and group client
         System.out.println("Connecting to group server...");
         GroupClient group_client = new GroupClient();
-        if (group_client.connect(group_server_url, group_server_port)) {
+        if (group_client.connect(group_server_url, group_server_port, null)) {
             System.out.println("Connected to group server " + group_server_url + ":" + group_server_port);
         } else {
             System.out.println("Unable to connect to group server " + group_server_url + ":" + group_server_port);
@@ -46,7 +46,7 @@ public class RunClient {
 
         System.out.println("Connecting to file server...");
         FileClient file_client = new FileClient();
-        if (file_client.connect(file_server_url, file_server_port)) {
+        if (file_client.connect(file_server_url, file_server_port, null)) {
             System.out.println("Connected to file server " + file_server_url + ":" + file_server_port);
         } else {
             System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
@@ -128,10 +128,9 @@ public class RunClient {
                         PublicKey fileServerPublicKey = new_file_client.initialConnect(url, port);
                         System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.getEncoded() + "\n\n" +
                         "Entery 'Y' to accept or 'N' to reject: ");
-                        String verifyAns = console.next();
-                        if(verifyAns.toUpperCase().equals("Y")) {
+                        if(console.next().toUpperCase().equals("Y")) {
                             new_file_client = new FileClient();
-                            if (new_file_client.connect(url, port)) {
+                            if (new_file_client.connect(url, port, fileServerPublicKey)) {
                                 System.out.println("Connected to file server " + url + ":" + port);
                                 file_client = new_file_client;
                                 file_server_url = url;
@@ -176,7 +175,7 @@ public class RunClient {
                         url = inputArray[1];
                         port = Integer.parseInt(inputArray[2]);
                         GroupClient new_group_client = new GroupClient();
-                        if (new_group_client.connect(url, port)) {
+                        if (new_group_client.connect(url, port, null)) {
                             System.out.println("Connected to group server " + url + ":" + port);
                             group_client = new_group_client;
                             group_server_url = url;

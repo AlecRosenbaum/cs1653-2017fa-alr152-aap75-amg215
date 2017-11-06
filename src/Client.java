@@ -17,7 +17,7 @@ public abstract class Client {
     protected ObjectInputStream input;
     protected SecretKey DH_Key;
 
-    public boolean connect(final String server, final int port) {
+    public boolean connect(final String server, final int port, PublicKey serverPublicKey) {
 
         try {
 
@@ -55,6 +55,21 @@ public abstract class Client {
 
             // Recieve Bob's DH Info
             byte[] bobDH = (byte[]) input.readObject();
+            if(serverPublicKey != null) {
+                byte[] signature = (byte[]) input.readObject();
+                Signature publicSignature = Signature.getInstance("SHA256withRSA");
+                publicSignature.initVerify(serverPublicKey);
+                publicSignature.update(bobDH);            
+                if(!publicSignature.verify(signature))
+                {
+                    System.out.println("Invalid signature, aborting connection.");
+                    return false;
+                }
+                else {
+                    System.out.println("Accepted Signature");
+                }
+
+            }
 
             KeyFactory clientKeyFac = KeyFactory.getInstance("DH");
             X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bobDH);
