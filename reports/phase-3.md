@@ -25,7 +25,7 @@ All public key cryptography used in addressing these threat models is implemente
 
 ### Hashing Functions
 
-All hashing within the context of this application will be done using SHA-256. Current NIST standards indicate that SHA-256 provides sufficient security for Digital signatures and hash-only applications. In the case of storing user passwords, PBKDF2 will be used to create the password key, while SHA-256 will be used as the pseudorandom function.  For our use, PBKDF2 will apply the HMAC SHA-256 encryption multiple times, and then proceeds to perform a xor operation over the multiple iterations of the pseudorandom function. This process is known as key stretching, and lengthens the time it takes to crack a password. As of January 2017, the Internet Engineering Task Force (IETF) recommends PBKDF2 as a password hashing algorithm [2].  The key derivation formula for PBKDF2 is as follows [2]:
+All hashing within the context of this application will be done using SHA-256. Current NIST standards indicate that SHA-256 provides sufficient security for Digital signatures and hash-only applications. In the case of storing user passwords, PBKDF2 will be used to create the password key, while SHA-256 will be used as the pseudorandom function.  For our use, PBKDF2 will apply the HMAC SHA-256 encryption multiple times, and then proceed to perform a xor operation over the multiple iterations of the pseudorandom function. This process is known as key stretching, and lengthens the time it takes to crack a password. As of January 2017, the Internet Engineering Task Force (IETF) recommends PBKDF2 as a password hashing algorithm [2].  The key derivation formula for PBKDF2 is as follows [2]:
 
 ```
    DK = (P, S, c, dkLen)
@@ -157,7 +157,7 @@ Because there is an assumption that clients are not trustworthy, all clients (C)
 
 #### Argument
 
-The suggested protocol gives a secure level of protection against unauthorized clients attempting to access the file system illegitimately.  The suggested protocol protects against multiple different attacks that an adversary could perform on the system.  If an adversary attempts to perform an online dictionary attack against the system, the profile they are trying to access will lock after several failed attempts to guess it.  The salted nature of the derived key also protects against a rainbow table attack, as the salt will force the hash dictionary to be recomputed for every password.  The use of PBKDF2 also provides benefits against a brute force attack. This is because, in our case, PBKDF2 arbitrarily increase the time it takes to hash a password, thus increasing bruteforce time.
+The suggested protocol gives a secure level of protection against unauthorized clients attempting to access the file system illegitimately.  The suggested protocol protects against multiple different attacks that an adversary could perform on the system.  If an adversary attempts to perform an online dictionary attack against the system, the profile they are trying to access will lock after several failed attempts to guess it.  The salted nature of the derived key also protects against a rainbow table attack, as the salt will force the hash dictionary to be recomputed for every password.  The use of PBKDF2 also provides benefits against a brute force attack. This is because, in our case, PBKDF2 arbitrarily increases the time it takes to hash a password, thus increasing bruteforce time.
 
 ### T2 - Token Modification/Forgery
 
