@@ -1,4 +1,4 @@
-# Phase 3 Writeup
+﻿# Phase 3 Writeup
 
 ## Group Information
 
@@ -21,7 +21,7 @@ The Symmetric Key Cryptography algorithm used in addressing these threat models 
 
 ### Public Key Cryptography
 
-All public key cryptography used in addressing these threat models is implemented using RSA. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for algorithms based on discrete logarithms.
+All public key cryptography used in addressing these threat models is implemented using RSA. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for algorithms based on discrete logarithms. RSA will be used for encryption and decryption of arbitrary data, as well as the creation and verification of digital signatures.
 
 ### Hashing Functions
 
@@ -97,7 +97,7 @@ DK = PBKDF2(HMAC−SHA1, passphrase, ssid, 4096, 256)
 
 ### Key Agreement
 
-The key agreement algorithm used to address these threat models will be Diffie Hellman. Diffie Hellman exchanges allow securely exchanging cryptographic keys over a public channel. Security of this exchange is based on discrete logarithms. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for modern applications. This application will utilize the prime and generator values for the 2048-bit MODP Group as specified by RFC3526[3] and quoted below.
+The key agreement algorithm used to address these threat models will be Diffie Hellman. Diffie Hellman exchanges allow securely exchanging cryptographic keys over a public channel. Security of this exchange is based on discrete logarithms. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for modern applications. This application will utilize the prime and generator values for the 2048-bit MODP Group as specified by RFC3526[3].
 
 ```
    This prime is: 2^2048 - 2^1984 - 1 + 2^64 * { [2^1918 pi] + 124476 }
@@ -124,6 +124,8 @@ The key agreement algorithm used to address these threat models will be Diffie H
 ### T1 - Unauthorized Token Issuance
 
 #### Description
+
+
 
 For this threat model, there is an assumption that clients are untrusted, and that illegitimate clients may try and request tokens from the group server.  Any illegitimate client who successfully obtains a token will undermine the security of the sever, and negate any worth of using tokens to access and modify groups and files.  A security breach via illegitimate token access from the group server would look similar to the following diagram: 
 
@@ -163,9 +165,9 @@ The suggested protocol gives a secure level of protection against unauthorized c
 
 #### Description
 
-Tokens issued by the trusted Group Server grants users access to groups and files. This threat model states that Users are not to be trusted, and will attempt to modify/forge tokens to increase their access rights. If a user is able to increase their access rights by modifying/forging a token, tokens become worthless as a method for defining access rights. To counter this threat, it must be possible for any third party (i.e. a File Server) to verify the integrity of all tokens received. In order to retain the functionality of distributed file servers that can spawn without notifying the trusted Group Server, this verification should be done without contacting said Group Server. The following is a diagram showing how token modification could be exploited to gain access to additional groups:
+Tokens issued by a trusted Group Server grants users access to groups and files. This threat model states that Users are not to be trusted, and will attempt to modify/forge tokens to increase their access rights. If a user is able to increase their access rights by modifying/forging a token, tokens become worthless as a method for defining access rights. To counter this threat, it must be possible for any third party (i.e. a File Server) to verify the integrity of all tokens received. In order to retain the functionality of distributed file servers that can spawn without notifying the trusted Group Server, this verification should be done without contacting said Group Server. The following is a diagram showing how token modification could be exploited to gain access to additional groups:
 
-* **Bob (B)** -> **Group Server (GS)**: `<token request>, Bob`
+* **Bob** logs in to the **Group Server (GS)** and retrieves a token
 * **GS** -> **B**: `<token>`
 * **B** adds group *secret_group* to his token
 * **B** -> **File Server (FS)**: `<requests file f in group secret_group>, <token>`
@@ -174,38 +176,47 @@ Tokens issued by the trusted Group Server grants users access to groups and file
 
 #### Protection
 
-The Group Server will have a public key and associated private key used only to generate RSA signatures. The key size will be 2048 bits. When a token is issued by the group server, it will be hashed (with SHA256) and signed using this key pair. Any time a token is communicated, the appropriate signature must be included. This signature will provide the ability for any third party to verify the integrity of the token using the Group Server's public key. The request/receipt of a token will be comprised of the following exchanges between Bob (B) and the Group Server (S):
+The Group Server will have a public key and associated private key used only to generate RSA signatures. When a token is issued by the group server, the identity and list of groups will be extracted, hashed, and signed using this key pair. Any time a token is communicated, the appropriate signature must be included. This signature will provide the ability for any third party to verify the integrity of the token using the Group Server's public key. The request/receipt of a token will be comprised of the following exchanges between Bob (B) and the Group Server (GS):
 
-* **B** -> **S**: ``<requests token for Bob>``
-* **S** -> **B**: `[ token ] Ks^(-1)`
+* **Bob** logs in to the **Group Server (GS)** and requests a token for **Bob** following the protocol specified in T1, using the key agreement protocol specified in T4
+* **GS** -> **B**: `token, [ token-data ] Ks^(-1)`
 * Bob now has a token with integrity that can be easily verified by a third party who trusts S.
+
+Note: tokens will be serialized into token-data as follows:
+
+token -> `<username>,<group_1>,<group_2>,...,<group_n>`
+
+In the case of user **Bob** with access to groups `bobs_group`, `alices_group`, and `fun_group`, **Bob's** token would be serialized into the following string: `bob,bobs_group,alices_group,fun_group` 
 
 #### Argument
 
-The suggested protocol allows any third party to verify the integrity of a token issued by a trusted Group Server. SHA256 will be used to generate the hash of the token, as it is a widely used hash algorithm that does a good job of providing both pre-image and second pre-image resistance. This hash will then be transformed into a signature using the private key of the trusted Group Server. The transformation of the hash into a signature relies on RSA public-key cryptography. RSA's medium-term security with large (2048 - 4096 bits) keys is not disputed by the cryptography community, and it is assumed to be relatively secure. RSA's security relies on the difficulty of the discrete logarithm problem, for which there is no known efficient general solution. Finally, this signature can be verified by anyone, as the Group Server's public key is publicly known information and can be used to decrypt the signature into a verifiable hash.
+The suggested protocol allows any third party to verify the integrity of a token issued by a trusted Group Server. When a token is issued, the token's data is serialized and hashed. This hash will then be transformed into a signature using the private key of the trusted Group Server. Finally, this signature can be verified by anyone, as the Group Server's public key is publicly known information and can be used to decrypt the signature into a verifiable hash.
 
-### T3
+If Bob modifies his token after receipt, the computed hash of that token's data (done by the file server) will not match the hash signed by the group server. If Bob forges a new token, there will be no signed hash associated with that token. If no signed hash is provided by to the file server along with the token, the file server will reject the request, as its integrity cannot be verified. 
+
+
+### T3 - Unauthorized file servers
 
 #### Description
 
-The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a different file server, it can receive the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. 
+The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a different file server, it can receive the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. The following is an example of how a malicious user M could exploit a system without a protection for this threat.
+
+* **B** -> **A**  **S** ``<connects to file server requests file, A intercepts>``
+* **A** -> **B** ``<provides fraudulent files>``
 
 #### Protection
 
-On the first connection from a user to a file server the file server will provide the user with its public key.  The user will save that locally. Then on any further communication with that file server the client will encrypt a large random number with that public key and send the encrypted message to the server. The server will then respond with the number that they decrypt with their private key. If the number matches the number that the client encrypted the client will know they have a secure connection.
+This threat will be protected through the use of a signed Diffie Hellman key exchange used in T4. The Protection section of T4 will explain the implementation of this exchange. The only thing that differs to ensure authorized file servers is that on initial connection the signature of the file server the user is connecting to must be approved by the user. All future connections will then be signed by the file servers RSA private key. 
 
-* Bob Connects to file server 1 for the first time.
-* **B** -> **S** ``<connects and requests token>``
-* File server 1 sends bob its public key.
+* Bob makes an initial connection to a file server **S**
+* **B** -> **S** ``<Initial connection>``
 * **S** -> **B** ``<public key>``
-* Bob connects with file server 1 sends it an encrypted message  of a random number with the public key.
-* **B** -> **S** ``<publickey(R1)>``
-* Server will send Bob R1 decrypted with its private key. If it's the right one, then bob will be good to use the server.
-* **S** -> **B** ``<R1>``
+* Bob must then approve this public key via a prompt and that key will then be used when using signed Diffie Hellman exchanges in the future.
+* Bob and **S** proceed with signed Diffie Hellman exchange and symmetric key cryptographic communication can continue. If Bob ever receives a (g^b) mod q from **S** that is not correctly signed and checked using the saved public key the client will sever connection with the server until the next attempt at a signed Diffie Hellman exchange.
 
 #### Argument
 
-This protection will assure the user of the client that they are connecting to the file server they intend to connect to. They can be assured they are not uploading or downloading files from a different server by checking the file server's fingerprint. A malicious server will be unable to decrypt R1 and the client will disconnect and refuse to use a server without getting a new random number that it encrypts back. 
+This protection will assure the user of the client that they are connecting to the file server they intend to connect to. The key to the protection is that Bob has to approve the public key of the file server initially. After that it is impossible for an attacker to provide the correct signature in the Diffie Hellman exchange to convince Bob to create a shared key with him and communicate with the attacker.
 
 
 ### T4 - Information Leakage via Passive Monitoring
@@ -230,13 +241,13 @@ This threat model assumes the existence of passive attackers (e.g., nosy adminis
 
 #### Protection
 
-To protect against this threat model, we will utilize the Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a Diffie Hellman key exchange. This allows the client and server to agree on a new shared secret key before every interaction, and grants perfect forward secrecy. After the key exchange, all messages will be encrypted using AES with the symmetric, shared key. During application development, values g and q will be chosen and baked into the applications. Value q will be 2048 bits, and values a and b will be 224 bits. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
+To protect against this threat model, we will utilize a signed Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a  signed Diffie Hellman key exchange. These signatures are created using each actors RSA private keys and verified using their public keys. This allows the client and server to agree on a new shared secret key before every interaction, and grants perfect forward secrecy. This method also enables the user and server to ensure that they are each communicating with the entity they intend to be communicating with by verifying the signatures. After the key exchange, all messages will be encrypted using AES with the symmetric, shared key. As stated within the assumptions section, values g and q will follow the recommendations laid out in RFC3526 for 2048-bit exchanges. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
 
 * Bob picks random value a.
-* **B** -> **S**: `(g^a) mod q`
-* Server picks random value b.
-* **S** -> **B**: `(g^b) mod q`
-* Bob and Server now have a shared key `K= g^(a*b) mod q`
+* **B** -> **S**: `[(g^a) mod q]B^(-1)`
+* Server validates signature picks random value b.
+* **S** -> **B**: `[(g^b) mod q]S^(-1)`
+* Bob validates signature and Bob and Server now have a shared key `K= g^(a*b) mod q`
 * **B** -> **S**: `{<message>}K`
 * **S** -> **B**: `{<message>}K`
 
@@ -249,9 +260,3 @@ The suggested protocol specifies an implementation of the Diffie-Hellman key exc
 
 Describe mechanism interplay, design process, etc.
 
-## References
-[1]Giry, Damien. Keylength - NIST Report on Cryptographic Key Length and Cryptoperiod (2016), NIST, www.keylength.com/en/4/.
-
-[2]Kaliski, B., and A. Rusch. “PKCS #5: Password-Based Cryptography Specification Version 2.1.” Edited by K. Moriarty, IETF Tools, Internet Engineering Task Force (IETF), Jan. 2017, tools.ietf.org/html/rfc8018.
-
-[3]Kivinen, T. More Modular Exponential (MODP) Diffie-Hellman Groups for Internet Key Exchange (IKE). Internet Engineering Task Force (IETF), May 2003, www.ietf.org/rfc/rfc3526.txt.
