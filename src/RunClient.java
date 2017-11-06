@@ -69,7 +69,7 @@ public class RunClient {
         if(fileServerPublicKey == null) {
             fileServerPublicKey = new_file_client.initialConnect(file_server_url, file_server_port);
             System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.getEncoded() + "\n\n" +
-            "Entery 'Y' to accept or 'N' to reject: ");
+            "Enter 'Y' to accept or 'N' to reject: ");
             if(console.nextLine().toUpperCase().equals("Y")) {
                 approvedFileServers.addServer(fileServerPublicKey, file_server_url, file_server_port);
                 new_file_client = new FileClient();
