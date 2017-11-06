@@ -1,5 +1,10 @@
 /* This list represents the users on the server */
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.*;
+
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 
 	public class UserList implements java.io.Serializable {
@@ -10,9 +15,9 @@ import java.util.*;
 		private static final long serialVersionUID = 7600343803563417992L;
 		private Hashtable<String, User> list = new Hashtable<String, User>();
 		
-		public synchronized void addUser(String username)
+		public synchronized void addUser(String username, String salt, String password)
 		{
-			User newUser = new User();
+			User newUser = new User(salt, password);
 			list.put(username, newUser);
 		}
 		
@@ -97,11 +102,37 @@ import java.util.*;
 		private static final long serialVersionUID = -6699986336399821598L;
 		private ArrayList<String> groups;
 		private ArrayList<String> ownership;
+		private boolean locked = false;
+		private byte[] salt = null;
+		private byte[] derivedKey = null;
 		
-		public User()
+		public User(String newSalt, String password)
 		{
+			salt = newSalt.getBytes();
 			groups = new ArrayList<String>();
 			ownership = new ArrayList<String>();
+			setPassword(password.toCharArray());
+		}
+		
+		public void setPassword(char[] password) {
+			
+			PBEKeySpec spec = new PBEKeySpec(password, salt, 1024, 256);
+			SecretKeyFactory secretKey = null;
+			try {
+				secretKey = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+				
+			} catch (NoSuchAlgorithmException e1) {
+	
+				e1.printStackTrace();
+			}
+		     try {
+		    	 
+				derivedKey = secretKey.generateSecret(spec).getEncoded();
+				
+			} catch (InvalidKeySpecException e) {
+	
+				e.printStackTrace();
+			}
 		}
 		
 		public ArrayList<String> getGroups()

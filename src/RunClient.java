@@ -1,5 +1,4 @@
 /* Driver program for Client */
-import java.util.ArrayList;
 import java.io.*;
 import java.util.*;
 
@@ -190,8 +189,10 @@ public class RunClient {
                         break;
                     case "createuser":
                         userName = inputArray[1];
-                        if (group_client.createUser(userName, mytoken)) {
+                        String randomPassword = getRandomString();
+                        if (group_client.createUser(userName, randomPassword , mytoken)) {
                             System.out.println("Created user " + userName);
+                            System.out.println("New user's temporary password: " + randomPassword);
                         } else {
                             System.out.println("User creation failed.");
                         }
@@ -300,15 +301,6 @@ public class RunClient {
             }
             System.out.println("---------------");
 
-            // add user to group
-            group_client.createUser("new_user", mytoken);
-            if (group_client.addUserToGroup("new_user", "test_group", mytoken)) {
-                System.out.println("User added to group.");
-            } else {
-                System.out.println("User not added to group.");
-                return;
-            }
-
             // list members
             members = (ArrayList<String>)group_client.listMembers("test_group", mytoken);
             for (String member : members) {
@@ -346,6 +338,21 @@ public class RunClient {
 
 
     }
+    
+    public static String getRandomString() {
+		
+		Random rand = new Random();
+		StringBuilder sb = new StringBuilder();
+		String charList = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+		for(int i = 0; i < 8; i++) {
+			
+			int charN = rand.nextInt(charList.length());
+			sb.append(charList.charAt(charN));
+		}
+		
+		return sb.toString();
+	}
+
 
 
 }
