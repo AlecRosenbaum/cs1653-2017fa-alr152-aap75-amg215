@@ -1,4 +1,4 @@
-# Phase 3 Writeup
+﻿# Phase 3 Writeup
 
 ## Group Information
 
@@ -17,7 +17,7 @@
 
 ### Symmetric Key Cryptography
 
-The Symmetric Key Cryptography algorithm used in addressing these threat models is AES-128. AES-128 utilizes a 128-bit key, and is considered sufficiently secure according to NIST standards published in 2016, as summarized by https://www.keylength.com/en/4/. 
+The Symmetric Key Cryptography algorithm used in addressing these threat models is AES-128. AES-128 utilizes a 128-bit key, and is considered sufficiently secure according to NIST standards published in 2016[1]. 
 
 ### Public Key Cryptography
 
@@ -25,11 +25,79 @@ All public key cryptography used in addressing these threat models is implemente
 
 ### Hashing Functions
 
-All hashing within the context of this application will be done using SHA-256. Current NIST standards indicate that SHA-256 provides sufficient security for Digital signatures and hash-only applications. 
+All hashing within the context of this application will be done using SHA-256. Current NIST standards indicate that SHA-256 provides sufficient security for Digital signatures and hash-only applications. In the case of storing user passwords, PBKDF2 will be used to create the password key, while SHA-256 will be used as the pseudorandom function.  For our use, PBKDF2 will apply the HMAC SHA-256 encryption multiple times, and then proceed to perform a xor operation over the multiple iterations of the pseudorandom function. This process is known as key stretching, and lengthens the time it takes to crack a password. As of January 2017, the Internet Engineering Task Force (IETF) recommends PBKDF2 as a password hashing algorithm [2].  The key derivation formula for PBKDF2 is as follows [2]:
+
+```
+   DK = (P, S, c, dkLen)
+   Options:        PRF        underlying pseudorandom function (hLen
+                              denotes the length in octets of the
+                              pseudorandom function output)
+
+   Input:          P          password, an octet string
+                   S          salt, an octet string
+                   c          iteration count, a positive integer
+                   dkLen      intended length in octets of the derived
+                              key, a positive integer, at most
+                              (2^32 - 1) * hLen
+
+   Output:         DK         derived key, a dkLen-octet string
+
+   Steps:
+
+      1.  If dkLen > (2^32 - 1) * hLen, output "derived key too long"
+          and stop.
+
+      2.  Let l be the number of hLen-octet blocks in the derived key,
+          rounding up, and let r be the number of octets in the last
+          block:
+
+                   l = CEIL (dkLen / hLen)
+                   r = dkLen - (l - 1) * hLen
+
+          Here, CEIL (x) is the "ceiling" function, i.e., the smallest
+          integer greater than, or equal to, x.
+
+      3.  For each block of the derived key apply the function F defined
+          below to the password P, the salt S, the iteration count c,
+          and the block index to compute the block:
+
+                   T_1 = F (P, S, c, 1) ,
+                   T_2 = F (P, S, c, 2) ,
+                   ...
+                   T_l = F (P, S, c, l) ,
+
+          where the function F is defined as the exclusive-or sum of the
+          first c iterates of the underlying pseudorandom function PRF
+          applied to the password P and the concatenation of the salt S
+          and the block index i:
+
+                   F (P, S, c, i) = U_1 \xor U_2 \xor ... \xor U_c
+
+          where
+                   U_1 = PRF (P, S || INT (i)) ,
+                   U_2 = PRF (P, U_1) ,
+                   ...
+                   U_c = PRF (P, U_{c-1}) .
+
+          Here, INT (i) is a four-octet encoding of the integer i, most
+          significant octet first.
+
+      4.  Concatenate the blocks and extract the first dkLen octets to
+          produce a derived key DK:
+
+                   DK = T_1 || T_2 ||  ...  || T_l<0..r-1>
+
+      5.  Output the derived key DK.
+```
+
+For example, the Wi-Fi Protected Alliance II (WPA2) uses the following parameters
+```
+DK = PBKDF2(HMAC−SHA1, passphrase, ssid, 4096, 256)
+```
 
 ### Key Agreement
 
-The key agreement algorithm used to address these threat models will be Diffie Hellman. Diffie Hellman exchanges allow securely exchanging cryptographic keys over a public channel. Security of this exchange is based on discrete logarithms. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for modern applications. This application will utilize the prime and generator values for the 2048-bit MODP Group as specified by RFC3526, available at https://www.ietf.org/rfc/rfc3526.txt, and quoted below.
+The key agreement algorithm used to address these threat models will be Diffie Hellman. Diffie Hellman exchanges allow securely exchanging cryptographic keys over a public channel. Security of this exchange is based on discrete logarithms. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for modern applications. This application will utilize the prime and generator values for the 2048-bit MODP Group as specified by RFC3526[3].
 
 ```
    This prime is: 2^2048 - 2^1984 - 1 + 2^64 * { [2^1918 pi] + 124476 }
@@ -57,7 +125,9 @@ The key agreement algorithm used to address these threat models will be Diffie H
 
 #### Description
 
-For this threat model, there is an assumption that clients are untrusted, and that illegitimate clients may try and request tokens from the group server.  Any illegitimate client who successfully obtains a token will undermine the security of the sever, and negate any worth of using tokens to access and modify groups and files.  A security breach via illegitimate token access from the group server would look similar to the following diagram: 
+
+
+For this threat model, there is an assumption that clients are untrusted, and that illegitimate clients may try and request tokens from the group server.  Any illegitimate client who successfully obtains a token will undermine the security of the sever, and negate any worth of using tokens to access and modify groups and files.  A security breach via illegitimate token access from the group server would look similar to the following diagram: 
 
 * Unauthorized Client(C) requests a token from Group Server(GS) with the username of owner of group g
 * **C** -> **GS**: `<token request>, group owner`
@@ -71,7 +141,7 @@ For this threat model, there is an assumption that clients are untrusted, and th
 
 #### Protection
 
-Because there is an assumption that clients are not trustworthy, all clients (C) must be verified via a password before being issued a token.  When an administrator (A) first creates a user, the server (S) issues a one-time password of 8-16 randomized characters.  This password is communicated to the new user via the administrator, and upon their first successful entry to the server they are told to enter their new password.  They will then use this password for all subsequent attempts to enter the server. 
+Because there is an assumption that clients are not trustworthy, all clients (C) must be verified via a password before being issued a token.  When an administrator (A) first creates a user, the server (S) issues a one-time password of 8 randomized characters. The one-time password is hashed and stored using PBKDF2 and a randomized salt. This password is communicated to the new user via the administrator in person, and upon their first successful entry to the server they are told to enter their new password.  They will then use this password for all subsequent attempts to enter the server. At this point a new derived key is created consisting of the new password and previous salt, still using PBKDF2.  This will be stored on the server and will serve as the basis for verifying a user’s password.  Finally, upon five failed attempts to login, a user's account is then locked.  At this point, an administrator will have to unlock the account and the process of creating a password is repeated.  It should also be noted that all communications are secured using a signed Diffie Hellman exchanged as implemented in T3 and T4.
 
 * Administrator creates a new user, is issued one-time password by server
 * S -> A: `one-time password`
@@ -83,19 +153,19 @@ Because there is an assumption that clients are not trustworthy, all clients (C)
 * Client provides one-time password, password change requested
 * C -> S: `changepassword, <one-time password>, <new password>`
 * S -> C: `<accept password change request>`
-* Normal client log in after password change
+* Normal client logs in after password change
 * C -> S: `<requests token>, password`
 * S -> C: `<token>`
 
 #### Argument
 
-The suggested protocol gives a base level of protection against unauthorized clients attempting to access the file system illegitimately.  By having the group server create a random password and forcing the administrator to directly communicate it to the authorized client in person (It should also be noted that the communication between the administrator and the group server are secured as well, as noted in T4) there are few ways for an attacker to obtain the random password.  As for the authorized client's permanent password, as for all password based security systems, part of the responsibility lies on the client to create a password that cannot be easily guessed by an attacker.   
+The suggested protocol gives a secure level of protection against unauthorized clients attempting to access the file system illegitimately.  The suggested protocol protects against multiple different attacks that an adversary could perform on the system.  If an adversary attempts to perform an online dictionary attack against the system, the profile they are trying to access will lock after several failed attempts to guess it.  The salted nature of the derived key also protects against a rainbow table attack, as the salt will force the hash dictionary to be recomputed for every password.  The use of PBKDF2 also provides benefits against a brute force attack. This is because, in our case, PBKDF2 arbitrarily increases the time it takes to hash a password, thus increasing bruteforce time.
 
 ### T2 - Token Modification/Forgery
 
 #### Description
 
-Tokens issued by a trusted Group Server grant users access to groups and files. This threat model states that Users are not to be trusted, and will attempt to modify/forge tokens to increase their access rights. If a user is able to increase their access rights by modifying/forging a token, tokens become worthless as a method for defining access rights. To counter this threat, it must be possible for any third party (i.e. a File Server) to verify the integrity of all tokens received. In order to retain the functionality of distributed file servers that can spawn without notifying the trusted Group Server, this verification should be done without contacting said Group Server. The following is a diagram showing how token modification could be exploited to gain access to additional groups:
+Tokens issued by a trusted Group Server grants users access to groups and files. This threat model states that Users are not to be trusted, and will attempt to modify/forge tokens to increase their access rights. If a user is able to increase their access rights by modifying/forging a token, tokens become worthless as a method for defining access rights. To counter this threat, it must be possible for any third party (i.e. a File Server) to verify the integrity of all tokens received. In order to retain the functionality of distributed file servers that can spawn without notifying the trusted Group Server, this verification should be done without contacting said Group Server. The following is a diagram showing how token modification could be exploited to gain access to additional groups:
 
 * **Bob** logs in to the **Group Server (GS)** and retrieves a token
 * **GS** -> **B**: `<token>`
@@ -122,14 +192,14 @@ In the case of user **Bob** with access to groups `bobs_group`, `alices_group`, 
 
 The suggested protocol allows any third party to verify the integrity of a token issued by a trusted Group Server. When a token is issued, the token's data is serialized and hashed. This hash will then be transformed into a signature using the private key of the trusted Group Server. Finally, this signature can be verified by anyone, as the Group Server's public key is publicly known information and can be used to decrypt the signature into a verifiable hash.
 
-If Bob modifies his token after receipt, the computed hash of that token's data (done by the file server) will not match the hash signed by the group server. If Bob forges a new token, there will be no signed hash associated with that token. If no signed hash is provided by to the file server along with the token, the file server will reject the request, as it's integrity can not be verified. 
+If Bob modifies his token after receipt, the computed hash of that token's data (done by the file server) will not match the hash signed by the group server. If Bob forges a new token, there will be no signed hash associated with that token. If no signed hash is provided by to the file server along with the token, the file server will reject the request, as its integrity cannot be verified. 
 
 
 ### T3 - Unauthorized file servers
 
 #### Description
 
-The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a different file server it can receive the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. The following is an example of how a malicious user M could exploit a system without a protection for this threat.
+The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a different file server, it can receive the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. The following is an example of how a malicious user M could exploit a system without a protection for this threat.
 
 * **B** -> **A**  **S** ``<connects to file server requests file, A intercepts>``
 * **A** -> **B** ``<provides fraudulent files>``
@@ -188,4 +258,5 @@ The suggested protocol specifies an implementation of the Diffie-Hellman key exc
 
 ## Conclusion
 
-Describe mechanism interplay, design process, etc
+Describe mechanism interplay, design process, etc.
+
