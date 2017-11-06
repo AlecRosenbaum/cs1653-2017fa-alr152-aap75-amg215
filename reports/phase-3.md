@@ -179,21 +179,26 @@ Tokens issued by a trusted Group Server grants users access to groups and files.
 The Group Server will have a public key and associated private key used only to generate RSA signatures. When a token is issued by the group server, the identity and list of groups will be extracted, hashed, and signed using this key pair. Any time a token is communicated, the appropriate signature must be included. This signature will provide the ability for any third party to verify the integrity of the token using the Group Server's public key. The request/receipt of a token will be comprised of the following exchanges between Bob (B) and the Group Server (GS):
 
 * **Bob** logs in to the **Group Server (GS)** and requests a token for **Bob** following the protocol specified in T1, using the key agreement protocol specified in T4
-* **GS** -> **B**: `token, [ token-data ] Ks^(-1)`
+* **GS** -> **B**: `token, [ H(token-data) ] Ks^(-1)`
 * Bob now has a token with integrity that can be easily verified by a third party who trusts S.
 
 Note: tokens will be serialized into token-data as follows:
 
-token -> `<username>,<group_1>,<group_2>,...,<group_n>`
+token -> `<issuer>,<username>;<group_1>,<group_2>,...,<group_n>`
 
-In the case of user **Bob** with access to groups `bobs_group`, `alices_group`, and `fun_group`, **Bob's** token would be serialized into the following string: `bob,bobs_group,alices_group,fun_group` 
+In the case of issuer **GroupServer** and user **Bob** with access to groups `bobs_group`, `alices_group`, and `fun_group`, **Bob's** token would be serialized into the following string: `GroupServer,Bob;alices_group,bobs_group,fun_group` 
+
+It is also important to note that:
+* commas are disallowed in the names of groups
+* groups are serialized in alphabetical order
 
 #### Argument
 
 The suggested protocol allows any third party to verify the integrity of a token issued by a trusted Group Server. When a token is issued, the token's data is serialized and hashed. This hash will then be transformed into a signature using the private key of the trusted Group Server. Finally, this signature can be verified by anyone, as the Group Server's public key is publicly known information and can be used to decrypt the signature into a verifiable hash.
 
-If Bob modifies his token after receipt, the computed hash of that token's data (done by the file server) will not match the hash signed by the group server. If Bob forges a new token, there will be no signed hash associated with that token. If no signed hash is provided by to the file server along with the token, the file server will reject the request, as its integrity cannot be verified. 
+If Bob modifies his token after receipt, the computed hash of that token's data (done by the file server) will not match the hash signed by the group server. If Bob forges a new token, there will be no signed hash associated with that token. If no signed hash is provided by to the file server along with the token, the file server will reject the request, as its integrity cannot be verified.
 
+Furthermore, functionally equivalent tokens will always generate the serialized output while functionally different tokens will serialize differently. This property is ensured by a) including all data in the serialization output, b) sorting the serialized groups alphabetically, and c) disallowing use of the serialization delimiter in group names.
 
 ### T3 - Unauthorized file servers
 
@@ -258,5 +263,5 @@ The suggested protocol specifies an implementation of the Diffie-Hellman key exc
 
 ## Conclusion
 
-Describe mechanism interplay, design process, etc.
+In this document it is outlined how protocols can be implemented to protect against passive listening adversaries, and actively adversarial clients. The described protocols secure communications, provide File server authentication, allow token verification, and prevent tokens from being issued to unauthorized clients.
 
