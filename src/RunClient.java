@@ -27,7 +27,11 @@ public class RunClient {
         String group_server_url = args[0];;
         int group_server_port;
         String file_server_url = args[2];
-        int file_server_port;        
+        int file_server_port;                
+        GroupClient group_client = new GroupClient();        
+        FileClient file_client = new FileClient();
+        FileClient new_file_client = new FileClient();
+        PublicKey fileServerPublicKey = null;
         ApprovedFileServerList approvedFileServers = new ApprovedFileServerList();
         try {
             File approvedFileServersFile = new File(fileServersPath);
@@ -52,40 +56,65 @@ public class RunClient {
             return;
         }
 
+        
+        boolean success = false;
+        boolean firstTime = true;        
         // instantiate file client and group client
-        System.out.println("Connecting to group server...");
-        GroupClient group_client = new GroupClient();
-        if (group_client.connect(group_server_url, group_server_port, null)) {
-            System.out.println("Connected to group server " + group_server_url + ":" + group_server_port);
-        } else {
-            System.out.println("Unable to connect to group server " + group_server_url + ":" + group_server_port);
-        }
+        do {
+            if(!firstTime) {
+                System.out.print("Enter a file server url: ");
+                group_server_url = console.nextLine();
+                System.out.print("Enter a file server port: ");
+                group_server_port = Integer.valueOf(console.nextLine());
+            }
+            firstTime = false;
+            group_client = new GroupClient();        
+            System.out.println("Connecting to group server...");
+            if (group_client.connect(group_server_url, group_server_port, null)) {
+                System.out.println("Connected to group server " + group_server_url + ":" + group_server_port);
+                success = true;
+            } else {
+                System.out.println("Unable to connect to group server " + group_server_url + ":" + group_server_port);
+            }
+        } while (!success);  
 
         System.out.println("Connecting to file server...");
-        FileClient file_client = new FileClient();
-        FileClient new_file_client = new FileClient();
-        PublicKey fileServerPublicKey = approvedFileServers.checkServer(file_server_url, file_server_port);
-        boolean connectToFileServer = true;
-        if(fileServerPublicKey == null) {
-            fileServerPublicKey = new_file_client.initialConnect(file_server_url, file_server_port);
-            System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.getEncoded() + "\n\n" +
-            "Enter 'Y' to accept or 'N' to reject: ");
-            if(console.nextLine().toUpperCase().equals("Y")) {
-                approvedFileServers.addServer(fileServerPublicKey, file_server_url, file_server_port);
-                new_file_client = new FileClient();
-            }else {
-                System.out.println("File Server Public Key NOT approved.");
-                connectToFileServer = false;
+        success = false;
+        firstTime = true;        
+        do {
+            if(!firstTime) {
+                System.out.print("Enter a file server url: ");
+                file_server_url = console.nextLine();
+                System.out.print("Enter a file server port: ");
+                file_server_port = Integer.valueOf(console.nextLine());
             }
-        }
-        if(connectToFileServer){
-            if (new_file_client.connect(file_server_url, file_server_port, fileServerPublicKey)) {
-                System.out.println("Connected to file server " + file_server_url + ":" + file_server_port);
-                file_client = new_file_client;
-            } else {
-                System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
+            firstTime = false;            
+            file_client = new FileClient();
+            new_file_client = new FileClient();
+            fileServerPublicKey = approvedFileServers.checkServer(file_server_url, file_server_port);
+            boolean connectToFileServer = true;
+            if(fileServerPublicKey == null) {
+                fileServerPublicKey = new_file_client.initialConnect(file_server_url, file_server_port);
+                System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.getEncoded() + "\n\n" +
+                "Enter 'Y' to accept or 'N' to reject: ");
+                if(console.nextLine().toUpperCase().equals("Y")) {
+                    approvedFileServers.addServer(fileServerPublicKey, file_server_url, file_server_port);
+                    new_file_client = new FileClient();
+                }else {
+                    System.out.println("File Server Public Key NOT approved.");
+                    connectToFileServer = false;
+                }
             }
-        }
+            if(connectToFileServer){
+                if (new_file_client.connect(file_server_url, file_server_port, fileServerPublicKey)) {
+                    System.out.println("Connected to file server " + file_server_url + ":" + file_server_port);
+                    file_client = new_file_client;
+                    success = true;
+                } else {
+                    System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
+                }
+            }
+        } while (!success);
         
         System.out.print("Enter user name: ");
         String u = console.nextLine();
