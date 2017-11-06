@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.StringJoiner;
+import java.util.Collections;
 
 
 public class Token implements java.io.Serializable, UserToken {
@@ -69,7 +70,8 @@ public class Token implements java.io.Serializable, UserToken {
      * @return     String representation of the token
      */
     public String stringify() {
-        StringJoiner allGroups = new StringJoiner(",", subject + ";", "");
+        StringJoiner allGroups = new StringJoiner(",", subject + "," + issuer + ";", "");
+        Collections.sort(groups);
         for (String group: groups) {
             allGroups.add(group);
         }
