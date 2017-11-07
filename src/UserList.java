@@ -45,9 +45,9 @@ import java.util.*;
 		
 		public synchronized ArrayList<String> getGroupMembers(String groupname)
 		{
-			ArrayList<String> groupmembers = new ArrayList<>(list.keySet());
-			ArrayList<User> groupUsers = new ArrayList<>(list.values());
-			ArrayList<String> listmembers = new ArrayList<>();
+			ArrayList<String> groupmembers = new ArrayList<User>(list.keySet());
+			ArrayList<User> groupUsers = new ArrayList<User>(list.values());
+			ArrayList<String> listmembers = new ArrayList<String>();
 			for(int i = 0; i < groupUsers.size(); i++) {
 				
 				if(groupUsers.get(i).getGroups().contains(groupname)) {
@@ -130,7 +130,7 @@ import java.util.*;
 		
 		public ArrayList<String> getGroups()
 		{
-			return new ArrayList<>(groups);
+			return new ArrayList<String>(groups);
 		}
 		
 		public ArrayList<String> getOwnership()
