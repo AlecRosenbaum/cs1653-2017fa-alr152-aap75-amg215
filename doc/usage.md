@@ -59,12 +59,14 @@ You can enter `help` at any time to view all commands but the available commands
     - Connects to new group server.                             
 - gdisconnect 
     - Disconnects from current group server.                        
-- changeuser [username] 
+- changeuser [username] [password]
     - Changes current user.                   
 - createuser [username] 
     - Creates new user, does NOT switch to that user. 
 - deleteuser [username] 
     - Deletes existing user. 
+- changepassword [user] [current password] [new password]
+    -Changes current user's password.
 - creategroup [groupname] 
     - Creates new group. 
 - deletegroup [groupname] 

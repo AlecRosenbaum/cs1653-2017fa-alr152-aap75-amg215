@@ -211,16 +211,16 @@ The file server implementation must ensure that if a user attempts to contact so
 
 #### Protection
 
-This threat will be protected through the use of a signed Diffie Hellman key exchange. The only thing that differs to ensure authorized file servers is that on initial connection the signature of the file server the user is connecting to must be approved by the user. All future connections Diffe Hellmen key exhanges will be initialted with the server providing a signed message with the initially provide public key. 
+This threat will be protected through the use of a signed Diffie Hellman key exchange. All connections using Diffie Hellmen key exhanges will be initialted with the server providing a signed message with an public key provided when the server is first connected to. This public key is approved through a prompt to the user. The prompt provides the fingerprint of the public key, which is the SHA-256 hash of the public key presented in hex. If and only if the public key is approved will the signed Diffie Hellman exchange proceed.
 
 * Bob makes an initial connection to a file server **S**
 * **B** -> **S** ``<Initial connection>``
 * **S** -> **B** ``<public key>``
-* Bob must then approve this public key via a prompt and that key will then be used when using signed Diffie Hellman exchanges in the future.
+* Bob must then approve this public key via a prompt displaying its fingerprint . If approved that key will then be used when using the signed Diffie Hellman exchanges in the future.
 * Bob and **S** proceed with signed Diffie Hellman exchange and symmetric key cryptographic communication can continue. 
 * Bob picks random value a.
 * **B** -> **S**: `(g^a) mod q`
-* Server picks random value b.
+* Server picks random value b and signs the message.
 * **S** -> **B**: `[(g^b) mod q]S^(-1)`
 * Bob validates signature with the intially provided public key and Bob and Server now have a shared key `K= g^(a*b) mod q`
 * **B** -> **S**: `{<message>}K`
@@ -261,5 +261,5 @@ The suggested protocol specifies an implementation of the Diffie-Hellman key exc
 
 ## Conclusion
 
-In this document it is outlined how protocols can be implemented to protect against passive listening adversaries, and actively adversarial clients. The described protocols secure communications, provide File server authentication, allow token verification, and prevent tokens from being issued to unauthorized clients.
+In this document it is outlined how protocols can be implemented to protect against passive listening adversaries, and actively adversarial clients. The described protocols secure communications, provide file server authentication, allow token verification, and prevent tokens from being issued to unauthorized clients. Implementing these protocols will protect a file sharing system from the specified threats.
 
