@@ -444,7 +444,6 @@ public class RunClient {
     }
     
     public static String prettify(byte[] input) {
-        System.out.println(input.length);
         StringBuilder sb = new StringBuilder(input.length * 2);
         for(byte b : input) {
             sb.append(String.format("%02x", b));
