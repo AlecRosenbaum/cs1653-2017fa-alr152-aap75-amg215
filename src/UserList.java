@@ -1,5 +1,10 @@
 /* This list represents the users on the server */
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.*;
+
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 
 	public class UserList implements java.io.Serializable {
@@ -10,9 +15,9 @@ import java.util.*;
 		private static final long serialVersionUID = 7600343803563417992L;
 		private Hashtable<String, User> list = new Hashtable<String, User>();
 		
-		public synchronized void addUser(String username)
+		public synchronized void addUser(String username, String salt, String password)
 		{
-			User newUser = new User();
+			User newUser = new User(salt, password);
 			list.put(username, newUser);
 		}
 		
@@ -87,6 +92,37 @@ import java.util.*;
 		{
 			list.get(user).removeOwnership(groupname);
 		}
+		public synchronized void setPassword(String user, String password) {
+			
+			list.get(user).setPassword(password.toCharArray());
+		}
+		public synchronized boolean checkPassword(String user, String password) {
+			
+			if(list.get(user).checkPassword(password.toCharArray())) {
+				
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		public synchronized void lockUser(String user) {
+			
+			list.get(user).lockUser();
+		}
+		public synchronized void unlockUser(String user) {
+			
+			list.get(user).unlockUser();
+		}
+		public synchronized boolean isLocked(String user) {
+			
+			return list.get(user).isLocked();
+		}
+		public synchronized boolean needsPassword(String user) {
+			
+			return list.get(user).needsPassword();
+		}
 		
 	
 	class User implements java.io.Serializable {
@@ -97,11 +133,83 @@ import java.util.*;
 		private static final long serialVersionUID = -6699986336399821598L;
 		private ArrayList<String> groups;
 		private ArrayList<String> ownership;
+		private boolean locked = false;
+		private byte[] salt = null;
+		private byte[] derivedKey = null;
+		private boolean needsPassword = false;
 		
-		public User()
+		public User(String newSalt, String password)
 		{
+			salt = newSalt.getBytes();
 			groups = new ArrayList<String>();
 			ownership = new ArrayList<String>();
+			setPassword(password.toCharArray());
+			needsPassword = true;
+		}
+		
+		public void setPassword(char[] password) {
+			
+			PBEKeySpec spec = new PBEKeySpec(password, salt, 1024, 256);
+			SecretKeyFactory secretKey = null;
+			try {
+				secretKey = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+				
+			} catch (NoSuchAlgorithmException e1) {
+	
+				e1.printStackTrace();
+			}
+		     try {
+		    	 
+				derivedKey = secretKey.generateSecret(spec).getEncoded();
+				needsPassword = false;
+				
+			} catch (InvalidKeySpecException e) {
+	
+				e.printStackTrace();
+			}
+		}
+		public boolean checkPassword(char[] password) {
+			
+			byte[] dk = null;
+			PBEKeySpec spec = new PBEKeySpec(password, salt, 1024, 256);
+			SecretKeyFactory secretKey = null;
+			try {
+				secretKey = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+				
+			} catch (NoSuchAlgorithmException e1) {
+	
+				e1.printStackTrace();
+			}
+		     try {
+		    	 
+				dk = secretKey.generateSecret(spec).getEncoded();
+				
+			} catch (InvalidKeySpecException e) {
+	
+				e.printStackTrace();
+			}
+		    if(Arrays.equals(derivedKey, dk)){
+		    	
+		    	return true;
+		    }
+		    return false;
+		}
+		public void lockUser() {
+			
+			locked = true;
+		}
+		public void unlockUser() {
+			
+			locked = false;
+			needsPassword = true;
+		}
+		public boolean isLocked() {
+			
+			return locked;
+		}
+		public boolean needsPassword() {
+			
+			return needsPassword;
 		}
 		
 		public ArrayList<String> getGroups()

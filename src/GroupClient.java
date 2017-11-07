@@ -255,14 +255,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 				return false;
 			}
 	 }
-	 public boolean setPassword(String username, String password, UserToken token) {
+	 public boolean setPassword( String password, UserToken token) {
 		 
 		 try
 			{
 				Envelope message = null, response = null;
 				//Tell the server to create a user
 				message = new Envelope("SETPASS");
-				message.addObject(username); //Add user name string
 				message.addObject(token); //Add the requester's token
 				message.addObject(password);//Add the user's new password token
 				this.writeObjectToOutput(message);
@@ -314,6 +313,135 @@ public class GroupClient extends Client implements GroupClientInterface {
 				System.err.println("Error: " + e.getMessage());
 				e.printStackTrace(System.err);
 				return false;
+			}
+	 }
+	 public boolean lockUser(String username) {
+		 
+		 try
+			{
+				Envelope message = null, response = null;
+				//Tell the server to create a user
+				message = new Envelope("LOCKUSER");
+				message.addObject(username); //Add user name string
+				this.writeObjectToOutput(message);
+			
+				
+				response = (Envelope) this.readObjectFromInput();
+				
+				//If server indicates success, return true
+				if(response.getMessage().equals("OK"))
+				{
+					return true;
+				}
+				
+				return false;
+			}
+			catch(Exception e)
+			{
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+				return false;
+			}
+	 }
+	 public boolean unlockUser(String username, UserToken token) {
+		 
+		 try
+			{
+				Envelope message = null, response = null;
+				//Tell the server to create a user
+				message = new Envelope("UNLOCKUSER");
+				message.addObject(username); //Add user name string
+				message.addObject(token); //Add admin token
+				this.writeObjectToOutput(message);
+			
+				
+				response = (Envelope) this.readObjectFromInput();
+				
+				//If server indicates success, return true
+				if(response.getMessage().equals("OK"))
+				{
+					return true;
+				}
+				
+				return false;
+			}
+			catch(Exception e)
+			{
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+				return false;
+			}
+	 }
+	 public boolean isLocked(String username) {
+		 
+		 try
+			{
+				Envelope message = null, response = null;
+				//Tell the server to create a user
+				message = new Envelope("ISLOCKED");
+				message.addObject(username); //Add user name string
+				this.writeObjectToOutput(message);
+			
+				
+				response = (Envelope) this.readObjectFromInput();
+				
+				//If server indicates success, return true
+				if(response.getMessage().equals("OK"))
+				{
+					//If there is a token in the Envelope, return it 
+					ArrayList<Object> temp = null;
+					temp = response.getObjContents();
+					
+					if(temp.size() == 1)
+					{
+						boolean bool = (boolean)temp.get(0);
+						return bool;
+					}
+				}
+				
+				return true;
+			}
+			catch(Exception e)
+			{
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+				return true;
+			}
+	 }
+	 public boolean needsPassword(String username) {
+		 
+		 try
+			{
+				Envelope message = null, response = null;
+				//Tell the server to create a user
+				message = new Envelope("NEEDSPASS");
+				message.addObject(username); //Add user name string
+				this.writeObjectToOutput(message);
+			
+				
+				response = (Envelope) this.readObjectFromInput();
+				
+				//If server indicates success, return true
+				if(response.getMessage().equals("OK"))
+				{
+					//If there is a token in the Envelope, return it 
+					ArrayList<Object> temp = null;
+					temp = response.getObjContents();
+					
+					if(temp.size() == 1)
+					{
+						boolean bool = (boolean)temp.get(0);
+						return bool;
+					}
+				}
+				
+				return true;
+			}
+			catch(Exception e)
+			{
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+				return true;
 			}
 	 }
 
