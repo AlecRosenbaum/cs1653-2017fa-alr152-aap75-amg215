@@ -104,8 +104,9 @@ public class GroupThread extends Thread {
 							if (message.getObjContents().get(1) != null) {
 								String username = (String)message.getObjContents().get(0); //Extract the username
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+								String password = (String)message.getObjContents().get(0); //Extract the username
 
-								if (createUser(username, yourToken)) {
+								if (createUser(username, yourToken, password)) {
 									response = new Envelope("OK"); //Success
 								}
 							}
@@ -230,7 +231,100 @@ public class GroupThread extends Thread {
 						}
 					}
 					writeObjectToOutput(response);
-				} else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
+				} else if (message.getMessage().equals("SETPASS")) { //Client wants to create a user
+					if (message.getObjContents().size() < 2) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+								String password = (String)message.getObjContents().get(0); //Extract the password
+
+								if (setPassword(yourToken, password)) {
+									response = new Envelope("OK"); //Success
+								}
+							}
+						}
+					}
+
+					writeObjectToOutput(response);
+				} else if (message.getMessage().equals("CHECKPASS")) { //Client wants to create a user
+					if (message.getObjContents().size() < 2) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								String username = (String)message.getObjContents().get(0); //Extract the username
+								String password = (String)message.getObjContents().get(0); //Extract the password
+
+								if (checkPassword(username, password)) {
+									response = new Envelope("OK"); //Success
+								}
+							}
+						}
+					}
+
+					writeObjectToOutput(response);
+				} else if (message.getMessage().equals("LOCKUSER")) { //Client wants to create a user
+					if (message.getObjContents().size() < 1) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								String username = (String)message.getObjContents().get(0); //Extract the username
+								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+								
+								if (unlockUser(username, yourToken)) {
+									response = new Envelope("OK"); //Success
+								}
+							}
+						}
+					}
+
+					writeObjectToOutput(response);
+				} else if (message.getMessage().equals("UNLOCKUSER")) { //Client wants to create a user
+					if (message.getObjContents().size() < 2) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								String username = (String)message.getObjContents().get(0); //Extract the username
+
+								if (lockUser(username)) {
+									response = new Envelope("OK"); //Success
+								}
+							}
+						}
+					}
+
+					writeObjectToOutput(response);
+				} else if (message.getMessage().equals("NEEDSPASS")) { //Client wants to create a user
+					if (message.getObjContents().size() < 2) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								String username = (String)message.getObjContents().get(0); //Extract the username
+
+								if (needsPassword(username)) {
+									response = new Envelope("OK"); //Success
+								}
+							}
+						}
+					}
+
+					writeObjectToOutput(response);
+				}else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
 					socket.close(); //Close the socket
 					proceed = false; //End this communication loop
 				} else {
@@ -267,7 +361,7 @@ public class GroupThread extends Thread {
 
 
 	//Method to create a user
-	private boolean createUser(String username, UserToken yourToken) {
+	private boolean createUser(String username, UserToken yourToken, String password) {
 		String requester = yourToken.getSubject();
 
 		//Check if requester exists
@@ -280,7 +374,7 @@ public class GroupThread extends Thread {
 				if (my_gs.userList.checkUser(username)) {
 					return false; //User already exists
 				} else {
-					my_gs.userList.addUser(username);
+					my_gs.userList.addUser(username, getRandomString(), password);
 					return true;
 				}
 			} else {
@@ -356,6 +450,9 @@ public class GroupThread extends Thread {
 			// check if group exists
 			if (my_gs.groups.contains(groupname)) {
 				System.out.println("Group already exists.");
+				return false;
+			} else if (groupname.contains(",")) {
+				System.out.println("Group name isn't valid. It contains a ','.");
 				return false;
 			} else {
 				// add group to list
@@ -472,6 +569,78 @@ public class GroupThread extends Thread {
 		}
 
 	}
+	private boolean setPassword(UserToken yourToken, String password) {
+		String requester = yourToken.getSubject();
+
+		//Check if requester exists
+		if (my_gs.userList.checkUser(requester)) {
+			my_gs.userList.setPassword(requester, password);
+			return true;
+		} else {
+			return false; //requester does not exist
+		}
+	}
+	private boolean checkPassword(String username, String password) {
+		String requester = username;
+
+		//Check if requester exists
+		if (my_gs.userList.checkUser(requester)) {
+			if(my_gs.userList.checkPassword(requester, password)) {
+				return true;
+			
+			} else {
+				return false;
+			}
+		} else {
+			return false; //requester does not exist
+		}
+	}
+	private boolean lockUser(String username) {
+		String requester = username;
+
+		//Check if requester exists
+		if (my_gs.userList.checkUser(requester)) {
+			my_gs.userList.lockUser(username);
+			return true;
+			
+		} else {
+			return false; //requester does not exist
+		}
+	}
+	private boolean unlockUser(String username, UserToken token) {
+		String requester = username;
+
+		//Check if requester exists
+		if (my_gs.userList.checkUser(requester)) {
+			my_gs.userList.unlockUser(requester);
+			return true;
+			
+		} else {
+			return false; //requester does not exist
+		}
+	}
+	private boolean isLocked(String username) {
+		String requester = username;
+
+		//Check if requester exists
+		if (my_gs.userList.checkUser(requester)) {
+			return my_gs.userList.isLocked(requester);
+			
+		} else {
+			return false; //requester does not exist
+		}
+	}
+	private boolean needsPassword(String username) {
+		String requester = username;
+
+		//Check if requester exists
+		if (my_gs.userList.checkUser(requester)) {
+			return my_gs.userList.needsPassword(requester);
+			
+		} else {
+			return false; //requester does not exist
+		}
+	}
 
 	/**
 	 * Writes an object to output. Will handle all encryption.
@@ -490,4 +659,18 @@ public class GroupThread extends Thread {
 		}
 		return false;
 	}
+	public String getRandomString() {
+		
+		Random rand = new Random();
+		StringBuilder sb = new StringBuilder();
+		String charList = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+		for(int i = 0; i < 8; i++) {
+			
+			int charN = rand.nextInt(charList.length());
+			sb.append(charList.charAt(charN));
+		}
+		
+		return sb.toString();
+	}
+    
 }
