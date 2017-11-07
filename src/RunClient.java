@@ -1,7 +1,7 @@
 /* Driver program for Client */
-import java.util.ArrayList;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 
 public class RunClient {
@@ -53,6 +53,54 @@ public class RunClient {
 
         System.out.print("Enter user name: ");
         String u = console.nextLine();
+        if(group_client.isLocked(u) == true) {
+        	
+        	System.out.println("Your account has been locked due to too many failed login attempts. Please contact an administrator to unlock");
+			try {
+				TimeUnit.SECONDS.sleep(3);
+                group_client.disconnect();
+                file_client.disconnect();
+                return;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+        }
+        System.out.println("Please enter your password: ");
+		String password = console.next();
+		if(group_client.checkPassword(u, password) == false) {
+			int tries = 4;
+			do {
+				System.out.println("Password Incorrect, you have " + tries + "more attempts before being locked out" );
+				password = console.next();
+				tries --;
+				
+			}while(group_client.checkPassword(u, password) == false && tries > 0);
+			if(group_client.checkPassword(u, password) == false) {
+				group_client.lockUser(u);
+				System.out.println("Your account has been locked due to too many failed login attempts. Please contact an administrator to unlock");
+				try {
+					TimeUnit.SECONDS.sleep(3);
+                    group_client.disconnect();
+                    file_client.disconnect();
+                    return;
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		if(group_client.needsPassword(u) == true) {
+			
+			System.out.println("Please enter a new password, must be between 8-16 characters: ");
+			String newPassword = console.next();
+			if(newPassword.length() <8 || newPassword.length() > 16) {
+				
+				do {
+					System.out.println("Please enter a valid password, must be between 8-16 characters: ");
+					newPassword = console.next();
+					
+				}while(newPassword.length() <8 || newPassword.length() > 16);
+			}
+		}
         UserToken mytoken = group_client.getToken(u);
         if (mytoken == null) {
             System.out.println("Login Unsuccessful");
@@ -115,6 +163,8 @@ public class RunClient {
                                          "\t\tAdds user to an existing group.\n" +
                                          "\tdeletegroupuser [username] [groupname]\n" +
                                          "\t\tDeletes user from a group.\n" +
+                                         "\tunlock [username]\n" +
+                                         "\t\tUnlocks a locked user.\n" +
                                          "\tlistmembers [groupname]\n" +
                                          "\t\tLists all users in given group.\n\n"
                                         );
@@ -190,8 +240,10 @@ public class RunClient {
                         break;
                     case "createuser":
                         userName = inputArray[1];
-                        if (group_client.createUser(userName, mytoken)) {
+                        String randomPassword = getRandomString();
+                        if (group_client.createUser(userName, randomPassword , mytoken)) {
                             System.out.println("Created user " + userName);
+                            System.out.println("New user's temporary password: " + randomPassword);
                         } else {
                             System.out.println("User creation failed.");
                         }
@@ -236,6 +288,14 @@ public class RunClient {
                             System.out.println("Deleted user " + userName + " from " + groupName);
                         } else {
                             System.out.println("Unable to delete user from group");
+                        }
+                        break;
+                    case "unlock":
+                        userName = inputArray[1];
+                        if (group_client.unlockUser(userName,mytoken)) {
+                            System.out.println("User Unlocked!");
+                        } else {
+                            System.out.println("Unable to unlock user");
                         }
                         break;
                     case "listmembers":
@@ -300,15 +360,6 @@ public class RunClient {
             }
             System.out.println("---------------");
 
-            // add user to group
-            group_client.createUser("new_user", mytoken);
-            if (group_client.addUserToGroup("new_user", "test_group", mytoken)) {
-                System.out.println("User added to group.");
-            } else {
-                System.out.println("User not added to group.");
-                return;
-            }
-
             // list members
             members = (ArrayList<String>)group_client.listMembers("test_group", mytoken);
             for (String member : members) {
@@ -346,6 +397,21 @@ public class RunClient {
 
 
     }
+    
+    public static String getRandomString() {
+		
+		Random rand = new Random();
+		StringBuilder sb = new StringBuilder();
+		String charList = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+		for(int i = 0; i < 8; i++) {
+			
+			int charN = rand.nextInt(charList.length());
+			sb.append(charList.charAt(charN));
+		}
+		
+		return sb.toString();
+	}
+
 
 
 }
