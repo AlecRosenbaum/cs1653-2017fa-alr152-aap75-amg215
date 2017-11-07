@@ -28,20 +28,6 @@ public class GroupServer extends Server {
 	public GroupServer(int _port) {
 		super(_port, "ALPHA");
 	}
-    
-    public String getRandomString() {
-		
-		Random rand = new Random();
-		StringBuilder sb = new StringBuilder();
-		String charList = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-		for(int i = 0; i < 8; i++) {
-			
-			int charN = rand.nextInt(charList.length());
-			sb.append(charList.charAt(charN));
-		}
-		
-		return sb.toString();
-	}
 
 	@SuppressWarnings("unchecked")
 	public void start() {
@@ -65,21 +51,12 @@ public class GroupServer extends Server {
 		} catch (FileNotFoundException e) {
 			System.out.println("UserList File Does Not Exist. Creating UserList...");
 			System.out.println("No users currently exist. Your account will be the administrator.");
-			System.out.println("Enter your username: ");
+			System.out.print("Enter your username: ");
 			String username = console.next();
-			System.out.println("Please enter a password, must be between 8-16 characters: ");
-			String password = console.next();
-			if(password.length() <8 || password.length() > 16) {
-				
-				do {
-					System.out.println("Please enter a valid password, must be between 8-16 characters: ");
-					password = console.next();
-					
-				}while(password.length() <8 || password.length() > 16);
-			}
+
 			//Create a new list, add current user to the ADMIN group. They now own the ADMIN group.
 			userList = new UserList();
-			userList.addUser(username, getRandomString(), password);
+			userList.addUser(username);
 			userList.addGroup(username, "ADMIN");
 			userList.addOwnership(username, "ADMIN");
 		} catch (IOException e) {

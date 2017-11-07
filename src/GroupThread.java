@@ -104,9 +104,8 @@ public class GroupThread extends Thread {
 							if (message.getObjContents().get(1) != null) {
 								String username = (String)message.getObjContents().get(0); //Extract the username
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
-								String password = (String)message.getObjContents().get(0); //Extract the username
 
-								if (createUser(username, yourToken, password)) {
+								if (createUser(username, yourToken)) {
 									response = new Envelope("OK"); //Success
 								}
 							}
@@ -231,26 +230,6 @@ public class GroupThread extends Thread {
 						}
 					}
 					writeObjectToOutput(response);
-				} else if (message.getMessage().equals("SETPASS")) { //Client wants to create a user
-					if (message.getObjContents().size() < 2) {
-						response = new Envelope("FAIL");
-					} else {
-						response = new Envelope("FAIL");
-
-						if (message.getObjContents().get(0) != null) {
-							if (message.getObjContents().get(1) != null) {
-								String username = (String)message.getObjContents().get(0); //Extract the username
-								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
-								String password = (String)message.getObjContents().get(0); //Extract the password
-
-								if (setPassword(username, yourToken, password)) {
-									response = new Envelope("OK"); //Success
-								}
-							}
-						}
-					}
-
-					writeObjectToOutput(response);
 				} else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
 					socket.close(); //Close the socket
 					proceed = false; //End this communication loop
@@ -288,7 +267,7 @@ public class GroupThread extends Thread {
 
 
 	//Method to create a user
-	private boolean createUser(String username, UserToken yourToken, String password) {
+	private boolean createUser(String username, UserToken yourToken) {
 		String requester = yourToken.getSubject();
 
 		//Check if requester exists
@@ -301,7 +280,7 @@ public class GroupThread extends Thread {
 				if (my_gs.userList.checkUser(username)) {
 					return false; //User already exists
 				} else {
-					my_gs.userList.addUser(username, getRandomString(), password);
+					my_gs.userList.addUser(username);
 					return true;
 				}
 			} else {
@@ -377,9 +356,6 @@ public class GroupThread extends Thread {
 			// check if group exists
 			if (my_gs.groups.contains(groupname)) {
 				System.out.println("Group already exists.");
-				return false;
-			} else if (groupname.contains(",")) {
-				System.out.println("Group name isn't valid. It contains a ','.");
 				return false;
 			} else {
 				// add group to list
@@ -496,32 +472,6 @@ public class GroupThread extends Thread {
 		}
 
 	}
-	private boolean setPassword(String username, UserToken yourToken, String password) {
-		String requester = yourToken.getSubject();
-
-		//Check if requester exists
-		if (my_gs.userList.checkUser(requester)) {
-			my_gs.userList.setPassword(username, password);
-			return true;
-		} else {
-			return false; //requester does not exist
-		}
-	}
-	private boolean checkPassword(String username, String password) {
-		String requester = username;
-
-		//Check if requester exists
-		if (my_gs.userList.checkUser(requester)) {
-			if(my_gs.userList.checkPassword(username, password)) {
-				return true;
-			
-			} else {
-				return false;
-			}
-		} else {
-			return false; //requester does not exist
-		}
-	}
 
 	/**
 	 * Writes an object to output. Will handle all encryption.
@@ -540,18 +490,4 @@ public class GroupThread extends Thread {
 		}
 		return false;
 	}
-	public String getRandomString() {
-		
-		Random rand = new Random();
-		StringBuilder sb = new StringBuilder();
-		String charList = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-		for(int i = 0; i < 8; i++) {
-			
-			int charN = rand.nextInt(charList.length());
-			sb.append(charList.charAt(charN));
-		}
-		
-		return sb.toString();
-	}
-    
 }
