@@ -216,11 +216,11 @@ This threat will be protected through the use of a signed Diffie Hellman key exc
 * Bob makes an initial connection to a file server **S**
 * **B** -> **S** ``<Initial connection>``
 * **S** -> **B** ``<public key>``
-* Bob must then approve this public key via a prompt and that key will then be used when using signed Diffie Hellman exchanges in the future.
+* Bob must then approve this public key via a prompt displaying its fingerprint . If approved that key will then be used when using the signed Diffie Hellman exchanges in the future.
 * Bob and **S** proceed with signed Diffie Hellman exchange and symmetric key cryptographic communication can continue. 
 * Bob picks random value a.
 * **B** -> **S**: `(g^a) mod q`
-* Server picks random value b.
+* Server picks random value b and signs the message.
 * **S** -> **B**: `[(g^b) mod q]S^(-1)`
 * Bob validates signature with the intially provided public key and Bob and Server now have a shared key `K= g^(a*b) mod q`
 * **B** -> **S**: `{<message>}K`
