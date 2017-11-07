@@ -174,7 +174,7 @@ public class RunClient {
                                          "\t\tCreates new user, does NOT switch to that user.\n" +
                                          "\tdeleteuser [username]\n" +
                                          "\t\tDeletes existing user.\n" +
-                                         "\tchangepassword [current password] [new password]\n" +
+                                         "\tchangepassword [user] [current password] [new password]\n" +
                                          "\t\tChanges current user's password.\n" +
                                          "\tcreategroup [groupname]\n" +
                                          "\t\tCreates new group.\n" +
@@ -265,16 +265,17 @@ public class RunClient {
                         p = inputArray[2];
                         UserToken newToken = group_client.getToken(u, p);
                         if (newToken == null) {
-                            System.out.println("Invalid user.");
+                            System.out.println("User change failed.");
                         } else {
                             System.out.println("Switched to user " + u);
                             mytoken = newToken;
                         }
                         break;
                     case "changepassword":
-                        p = inputArray[1];
-                        String newP = inputArray[2];
-                        if (group_client.changePassword(mytoken.getSubject(), p, newP)) {
+                        u = inputArray[1];
+                        p = inputArray[2];
+                        String newP = inputArray[3];
+                        if (group_client.changePassword(mytoken, u, p, newP)) {
                             System.out.println("Password change sucessful.");
                         } else {
                             System.out.println("Password change failed.");

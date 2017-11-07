@@ -92,6 +92,10 @@ import java.util.*;
 			return list.get(user).checkPassword(password);
 		}
 
+		public synchronized boolean lockedOut(String user) {
+			return list.get(user).lockedOut();
+		}
+
 		public synchronized void changePassword(String user, String newPassword) {
 			list.get(user).setPassword(newPassword);
 		}
@@ -107,6 +111,7 @@ import java.util.*;
 		private ArrayList<String> ownership;
 		private byte[] salt;
 		private byte[] password;
+		private int attempts;
 		
 		public User(String password)
 		{
@@ -119,6 +124,8 @@ import java.util.*;
 			
 			// set password
 			this.password = this.hash(password);
+
+			attempts = 0;
 		}
 		
 		public ArrayList<String> getGroups()
@@ -164,10 +171,21 @@ import java.util.*;
 		}
 
 		public boolean checkPassword(String password) {
-			return Arrays.equals(this.password, this.hash(password)); 
+			if (Arrays.equals(this.password, this.hash(password))) {
+				attempts = 0;
+				return true;
+			} else {
+				attempts += 1;
+				return false;
+			}
+		}
+
+		public boolean lockedOut() {
+			return attempts >= 5;
 		}
 		
 		public void setPassword(String password) {
+			attempts = 0;
 			this.password = this.hash(password);
 		}
 

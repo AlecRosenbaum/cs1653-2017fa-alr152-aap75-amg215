@@ -83,7 +83,7 @@ public class GroupThread extends Thread {
 				if (message.getMessage().equals("GET")) { //Client wants a token
 					String username = (String)message.getObjContents().get(0); //Get the username
 					String password = (String)message.getObjContents().get(1); //Get the password
-					if (username == null || !my_gs.userList.validate(username, password)) {
+					if (username == null || my_gs.userList.lockedOut(username) || !my_gs.userList.validate(username, password)) {
 						response = new Envelope("FAIL");
 						response.addObject(null);
 						writeObjectToOutput(response);
@@ -234,17 +234,18 @@ public class GroupThread extends Thread {
 					}
 					writeObjectToOutput(response);
 				} else if (message.getMessage().equals("CPASSWORD")) { //Client wants to change password
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 4) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
 
-						if (message.getObjContents().get(0) != null && message.getObjContents().get(1) != null && message.getObjContents().get(2) != null) {
-							String username = (String)message.getObjContents().get(0); //Extract the username
-							String oldPass = (String)message.getObjContents().get(1); //Extract the old pass
-							String newPass = (String)message.getObjContents().get(2); //Extract the new pass
+						if (message.getObjContents().get(0) != null && message.getObjContents().get(1) != null && message.getObjContents().get(2) != null && message.getObjContents().get(3) != null) {
+							Token token = (Token)message.getObjContents().get(0); //Extract the token
+							String username = (String)message.getObjContents().get(1); //Extract the username
+							String oldPass = (String)message.getObjContents().get(2); //Extract the old pass
+							String newPass = (String)message.getObjContents().get(3); //Extract the new pass
 
-							if (changePassword(username, oldPass, newPass)) {
+							if (changePassword(token, username, oldPass, newPass)) {
 								response = new Envelope("OK"); //Success
 							}
 						}
@@ -287,17 +288,25 @@ public class GroupThread extends Thread {
 	}
 
 	//Method to change password
-	private boolean changePassword(String username, String oldPass, String newPass) {
+	private boolean changePassword(Token token, String username, String oldPass, String newPass) {
 		//Check that user exists
 		if (my_gs.userList.checkUser(username)) {
-			// validate old password
-			if (!my_gs.userList.validate(username, oldPass)) {
-				return false;
+			// check if accound is locked
+			if (my_gs.userList.lockedOut(username)) {
+				// only an admin can change
+				if (my_gs.userList.getUserGroups(token.getSubject()).contains("ADMIN")) {
+					// user is an admin, set new password
+					my_gs.userList.changePassword(username, newPass);
+					return true;
+				}
+			} else {
+				// validate old password
+				if (my_gs.userList.validate(username, oldPass)) {
+					// set new password
+					my_gs.userList.changePassword(username, newPass);
+					return true;
+				}
 			}
-
-			// set new password
-			my_gs.userList.changePassword(username, newPass);
-			return true;
 		}
 
 		return false;

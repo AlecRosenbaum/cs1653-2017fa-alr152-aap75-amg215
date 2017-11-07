@@ -214,10 +214,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
-	public boolean changePassword(String username, String oldPass, String newPass) {
+	public boolean changePassword(UserToken token, String username, String oldPass, String newPass) {
 		try {
 			Envelope message = null, response = null;
 			message = new Envelope("CPASSWORD");
+			message.addObject(token); //Add token
 			message.addObject(username); //Add user name string
 			message.addObject(oldPass); //Add group name string
 			message.addObject(newPass); //Add requester's token
