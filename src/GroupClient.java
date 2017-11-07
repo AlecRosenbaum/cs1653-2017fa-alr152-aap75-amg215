@@ -8,7 +8,7 @@ import java.io.ObjectOutputStream;
 
 public class GroupClient extends Client implements GroupClientInterface {
 	 
-	 public UserToken getToken(String username)
+	 public UserToken getToken(String username, String password)
 	 {
 		try
 		{
@@ -18,6 +18,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
+			message.addObject(password); //Add password string
 			this.writeObjectToOutput(message);
 		
 			//Get the response from the server
@@ -48,7 +49,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		
 	 }
 	 
-	 public boolean createUser(String username, UserToken token)
+	 public String createUser(String username, UserToken token)
 	 {
 		 try
 			{
@@ -65,17 +66,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 				//If server indicates success, return true
 				if(response.getMessage().equals("OK"))
 				{
-					return true;
+					return (String)response.getObjContents().get(0); // the random password string
 				}
 				
-				
-				return false;
+				return null;
 			}
 			catch(Exception e)
 			{
 				System.err.println("Error: " + e.getMessage());
 				e.printStackTrace(System.err);
-				return false;
+				return null;
 			}
 	 }
 	 

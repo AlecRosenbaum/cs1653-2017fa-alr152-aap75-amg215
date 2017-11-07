@@ -82,7 +82,8 @@ public class GroupThread extends Thread {
 
 				if (message.getMessage().equals("GET")) { //Client wants a token
 					String username = (String)message.getObjContents().get(0); //Get the username
-					if (username == null) {
+					String password = (String)message.getObjContents().get(1); //Get the password
+					if (username == null || !my_gs.userList.validate(username, password)) {
 						response = new Envelope("FAIL");
 						response.addObject(null);
 						writeObjectToOutput(response);
@@ -105,8 +106,10 @@ public class GroupThread extends Thread {
 								String username = (String)message.getObjContents().get(0); //Extract the username
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
 
-								if (createUser(username, yourToken)) {
+								String startpass = "asdfasdf";
+								if (createUser(username, yourToken, startpass)) {
 									response = new Envelope("OK"); //Success
+									response.addObject(startpass);
 								}
 							}
 						}
@@ -267,7 +270,7 @@ public class GroupThread extends Thread {
 
 
 	//Method to create a user
-	private boolean createUser(String username, UserToken yourToken) {
+	private boolean createUser(String username, UserToken yourToken, String initPass) {
 		String requester = yourToken.getSubject();
 
 		//Check if requester exists
@@ -280,7 +283,7 @@ public class GroupThread extends Thread {
 				if (my_gs.userList.checkUser(username)) {
 					return false; //User already exists
 				} else {
-					my_gs.userList.addUser(username);
+					my_gs.userList.addUser(username, initPass);
 					return true;
 				}
 			} else {

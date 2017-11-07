@@ -118,7 +118,9 @@ public class RunClient {
         
         System.out.print("Enter user name: ");
         String u = console.nextLine();
-        UserToken mytoken = group_client.getToken(u);
+        System.out.print("Enter password: ");
+        String p = console.nextLine();
+        UserToken mytoken = group_client.getToken(u, p);
         if (mytoken == null) {
             System.out.println("Login Unsuccessful");
         } else {
@@ -166,7 +168,7 @@ public class RunClient {
                                          "\t\tConnects to new group server.\n" +
                                          "\tgdisconnect\n" +
                                          "\t\tDisconnects from current group server.\n" +
-                                         "\tchangeuser [username]\n" +
+                                         "\tchangeuser [username] [password]\n" +
                                          "\t\tChanges current user.\n" +
                                          "\tcreateuser [username]\n" +
                                          "\t\tCreates new user, does NOT switch to that user.\n" +
@@ -249,7 +251,7 @@ public class RunClient {
                             group_server_url = url;
                             group_server_port = port;
                         } else {
-                            System.out.println("Unable to connect to file server " + url + ":" + port);
+                            System.out.println("Unable to connect to group server " + url + ":" + port);
                         }
                         break;
                     case "gdisconnect":
@@ -257,19 +259,22 @@ public class RunClient {
                         System.out.println("Disconnected");
                         break;
                     case "changeuser":
-                        userName = inputArray[1];
-                        UserToken newToken = group_client.getToken(userName);
+                        u = inputArray[1];
+                        p = inputArray[2];
+                        UserToken newToken = group_client.getToken(u, p);
                         if (newToken == null) {
                             System.out.println("Invalid user.");
                         } else {
-                            System.out.println("Switched to user " + userName);
+                            System.out.println("Switched to user " + u);
                             mytoken = newToken;
                         }
                         break;
                     case "createuser":
                         userName = inputArray[1];
-                        if (group_client.createUser(userName, mytoken)) {
+                        String newPass = group_client.createUser(userName, mytoken);
+                        if (newPass != null) {
                             System.out.println("Created user " + userName);
+                            System.out.println("Initial Password: " + newPass);
                         } else {
                             System.out.println("User creation failed.");
                         }
@@ -306,6 +311,7 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to add user to group");
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p); //refresh token
                         break;
                     case "deletegroupuser":
                         userName = inputArray[1];
@@ -315,6 +321,7 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to delete user from group");
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p); //refresh token
                         break;
                     case "listmembers":
                         groupName = inputArray[1];
@@ -338,14 +345,14 @@ public class RunClient {
                 }
 
                 // reconnect to groupserver, refresh token
-                mytoken = group_client.getToken(mytoken.getSubject()); //refresh token
+                // mytoken = group_client.getToken(mytoken.getSubject(), password); //refresh token
             } while (true);
         }
         // Test Code In Here
         else {
             // get a token
             System.out.println("Running Tests");
-            mytoken = group_client.getToken("aadu");
+            mytoken = group_client.getToken("aadu" ,"admin");
             if (mytoken == null) {
                 System.out.println("Token creation unsucessful.");
             } else {

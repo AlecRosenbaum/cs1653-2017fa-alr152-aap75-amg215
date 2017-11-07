@@ -10,9 +10,9 @@ import java.util.*;
 		private static final long serialVersionUID = 7600343803563417992L;
 		private Hashtable<String, User> list = new Hashtable<String, User>();
 		
-		public synchronized void addUser(String username)
+		public synchronized void addUser(String username, String password)
 		{
-			User newUser = new User();
+			User newUser = new User(password);
 			list.put(username, newUser);
 		}
 		
@@ -87,6 +87,10 @@ import java.util.*;
 		{
 			list.get(user).removeOwnership(groupname);
 		}
+
+		public synchronized boolean validate(String user, String password) {
+			return list.get(user).checkPassword(password);
+		}
 		
 	
 	class User implements java.io.Serializable {
@@ -97,11 +101,13 @@ import java.util.*;
 		private static final long serialVersionUID = -6699986336399821598L;
 		private ArrayList<String> groups;
 		private ArrayList<String> ownership;
+		private String password;
 		
-		public User()
+		public User(String password)
 		{
 			groups = new ArrayList<String>();
 			ownership = new ArrayList<String>();
+			this.password = password;
 		}
 		
 		public ArrayList<String> getGroups()
@@ -145,7 +151,15 @@ import java.util.*;
 				}
 			}
 		}
+
+		public boolean checkPassword(String password) {
+			return this.password.equals(password);
+		}
 		
+		public void setPassword(String password) {
+			this.password = password;
+		}
+
 	}
 	
 }	
