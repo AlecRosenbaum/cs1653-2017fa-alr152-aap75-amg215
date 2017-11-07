@@ -1,4 +1,4 @@
-﻿# Phase 3 Writeup
+# Phase 3 Writeup
 
 ## Group Information
 
@@ -179,20 +179,11 @@ Tokens issued by a trusted Group Server grants users access to groups and files.
 The Group Server will have a public key and associated private key used only to generate RSA signatures. When a token is issued by the group server, the identity and list of groups will be extracted, hashed, and signed using this key pair. Any time a token is communicated, the appropriate signature must be included. This signature will provide the ability for any third party to verify the integrity of the token using the Group Server's public key. The request/receipt of a token will be comprised of the following exchanges between Bob (B) and the Group Server (GS):
 
 * **Bob** logs in to the **Group Server (GS)** and requests a token for **Bob** following the protocol specified in T1, using the key agreement protocol specified in T4
-<<<<<<< HEAD
-* **GS** -> **B**: `token, [ token-data ] Ks^(-1)`
-=======
 * **GS** -> **B**: `token, [ H(token-data) ] Ks^(-1)`
->>>>>>> refs/remotes/origin/master
 * Bob now has a token with integrity that can be easily verified by a third party who trusts S.
 
 Note: tokens will be serialized into token-data as follows:
 
-<<<<<<< HEAD
-token -> `<username>,<group_1>,<group_2>,...,<group_n>`
-
-In the case of user **Bob** with access to groups `bobs_group`, `alices_group`, and `fun_group`, **Bob's** token would be serialized into the following string: `bob,bobs_group,alices_group,fun_group` 
-=======
 token -> `<issuer>,<username>;<group_1>,<group_2>,...,<group_n>`
 
 In the case of issuer **GroupServer** and user **Bob** with access to groups `bobs_group`, `alices_group`, and `fun_group`, **Bob's** token would be serialized into the following string: `GroupServer,Bob;alices_group,bobs_group,fun_group` 
@@ -200,49 +191,32 @@ In the case of issuer **GroupServer** and user **Bob** with access to groups `bo
 It is also important to note that:
 * commas are disallowed in the names of groups
 * groups are serialized in alphabetical order
->>>>>>> refs/remotes/origin/master
 
 #### Argument
 
 The suggested protocol allows any third party to verify the integrity of a token issued by a trusted Group Server. When a token is issued, the token's data is serialized and hashed. This hash will then be transformed into a signature using the private key of the trusted Group Server. Finally, this signature can be verified by anyone, as the Group Server's public key is publicly known information and can be used to decrypt the signature into a verifiable hash.
 
-<<<<<<< HEAD
-If Bob modifies his token after receipt, the computed hash of that token's data (done by the file server) will not match the hash signed by the group server. If Bob forges a new token, there will be no signed hash associated with that token. If no signed hash is provided by to the file server along with the token, the file server will reject the request, as its integrity cannot be verified. 
-
-=======
 If Bob modifies his token after receipt, the computed hash of that token's data (done by the file server) will not match the hash signed by the group server. If Bob forges a new token, there will be no signed hash associated with that token. If no signed hash is provided by to the file server along with the token, the file server will reject the request, as its integrity cannot be verified.
 
 Furthermore, functionally equivalent tokens will always generate the serialized output while functionally different tokens will serialize differently. This property is ensured by a) including all data in the serialization output, b) sorting the serialized groups alphabetically, and c) disallowing use of the serialization delimiter in group names.
->>>>>>> refs/remotes/origin/master
 
 ### T3 - Unauthorized file servers
 
 #### Description
 
-<<<<<<< HEAD
-The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a different file server, it can receive the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. The following is an example of how a malicious user M could exploit a system without a protection for this threat.
-=======
 The file server implementation must ensure that if a user attempts to contact some server, s, then they actually connect to s and not some other server. If there is no way to check that the file server you want to connect to is actually that server, then a malicious agent could try to pretend to be the server that you want to connect to. If a malicious file server is able to pretend to be a different file server it can receive the intended files from the user and glean information from it. The malicious server could also provide files on a download that could harm or be used to infiltrate the user's system. The following is an example of how a malicious user M could exploit a system without a protection for this threat.
->>>>>>> refs/remotes/origin/master
 
 * **B** -> **A**  **S** ``<connects to file server requests file, A intercepts>``
 * **A** -> **B** ``<provides fraudulent files>``
 
 #### Protection
 
-<<<<<<< HEAD
-This threat will be protected through the use of a signed Diffie Hellman key exchange used in T4. The Protection section of T4 will explain the implementation of this exchange. The only thing that differs to ensure authorized file servers is that on initial connection the signature of the file server the user is connecting to must be approved by the user. All future connections will then be signed by the file servers RSA private key. 
-=======
 This threat will be protected through the use of a signed Diffie Hellman key exchange. The only thing that differs to ensure authorized file servers is that on initial connection the signature of the file server the user is connecting to must be approved by the user. All future connections Diffe Hellmen key exhanges will be initialted with the server providing a signed message with the initially provide public key. 
->>>>>>> refs/remotes/origin/master
 
 * Bob makes an initial connection to a file server **S**
 * **B** -> **S** ``<Initial connection>``
 * **S** -> **B** ``<public key>``
 * Bob must then approve this public key via a prompt and that key will then be used when using signed Diffie Hellman exchanges in the future.
-<<<<<<< HEAD
-* Bob and **S** proceed with signed Diffie Hellman exchange and symmetric key cryptographic communication can continue. If Bob ever receives a (g^b) mod q from **S** that is not correctly signed and checked using the saved public key the client will sever connection with the server until the next attempt at a signed Diffie Hellman exchange.
-=======
 * Bob and **S** proceed with signed Diffie Hellman exchange and symmetric key cryptographic communication can continue. 
 * Bob picks random value a.
 * **B** -> **S**: `(g^a) mod q`
@@ -251,7 +225,6 @@ This threat will be protected through the use of a signed Diffie Hellman key exc
 * Bob validates signature with the intially provided public key and Bob and Server now have a shared key `K= g^(a*b) mod q`
 * **B** -> **S**: `{<message>}K`
 * **S** -> **B**: `{<message>}K`
->>>>>>> refs/remotes/origin/master
 
 #### Argument
 
@@ -280,20 +253,7 @@ This threat model assumes the existence of passive attackers (e.g., nosy adminis
 
 #### Protection
 
-<<<<<<< HEAD
-To protect against this threat model, we will utilize a signed Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a  signed Diffie Hellman key exchange. These signatures are created using each actors RSA private keys and verified using their public keys. This allows the client and server to agree on a new shared secret key before every interaction, and grants perfect forward secrecy. This method also enables the user and server to ensure that they are each communicating with the entity they intend to be communicating with by verifying the signatures. After the key exchange, all messages will be encrypted using AES with the symmetric, shared key. As stated within the assumptions section, values g and q will follow the recommendations laid out in RFC3526 for 2048-bit exchanges. Here is the sequence of messages we will use during the key exchange between our two actors, Bob (B) and Server (S):
-
-* Bob picks random value a.
-* **B** -> **S**: `[(g^a) mod q]B^(-1)`
-* Server validates signature picks random value b.
-* **S** -> **B**: `[(g^b) mod q]S^(-1)`
-* Bob validates signature and Bob and Server now have a shared key `K= g^(a*b) mod q`
-* **B** -> **S**: `{<message>}K`
-* **S** -> **B**: `{<message>}K`
-
-=======
 To protect against this threat model, we will utilize a signed Diffie Hellman key exchange during all communications. Every time a client and server interact, their interaction will be prefaced by a signed Diffie Hellman key exchange. This allows the client and server to agree on a new shared secret key before every interaction, and grants perfect forward secrecy. This method also enables the user and server to ensure that they are each communicating with the entity they intend to be communicating with by verifying the signatures. After the key exchange, all messages will be encrypted using AES with the symmetric, shared key. As stated within the assumptions section, values g and q will follow the recommendations laid out in RFC3526 for 2048-bit exchanges. The implementation and messages sent are described in T3.
->>>>>>> refs/remotes/origin/master
 
 #### Argument
 
@@ -301,9 +261,6 @@ The suggested protocol specifies an implementation of the Diffie-Hellman key exc
 
 ## Conclusion
 
-<<<<<<< HEAD
-Describe mechanism interplay, design process, etc.
-=======
 In this document it is outlined how protocols can be implemented to protect against passive listening adversaries, and actively adversarial clients. The described protocols secure communications, provide File server authentication, allow token verification, and prevent tokens from being issued to unauthorized clients.
->>>>>>> refs/remotes/origin/master
+
 
