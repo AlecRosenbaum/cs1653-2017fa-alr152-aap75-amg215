@@ -26,20 +26,15 @@ public abstract class EncryptionUtils {
 	}
 
 	public static byte[] serialize(Object obj) throws IOException {
-		try(ByteArrayOutputStream b = new ByteArrayOutputStream()) {
-			try(ObjectOutputStream o = new ObjectOutputStream(b)) {
-				o.writeObject(obj);
-			}
-			return b.toByteArray();
-		}
+		ByteArrayOutputStream b = new ByteArrayOutputStream();
+		ObjectOutputStream o = new ObjectOutputStream(b);
+		return b.toByteArray();		
 	}
 
 	public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
-		try(ByteArrayInputStream b = new ByteArrayInputStream(bytes)) {
-			try(ObjectInputStream o = new ObjectInputStream(b)) {
-				return o.readObject();
-			}
-		}
+		ByteArrayInputStream b = new ByteArrayInputStream(bytes);
+		ObjectInputStream o = new ObjectInputStream(b);
+		return o.readObject();
 	}
 
 
@@ -98,7 +93,7 @@ public abstract class EncryptionUtils {
 			KeyFactory kf = KeyFactory.getInstance("RSA");
 			pk = kf.generatePublic(spec);
 			return pk;
-		} catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+		} catch (Exception e) {
 			e.printStackTrace(System.err);
 			return null;
 		}
@@ -120,7 +115,7 @@ public abstract class EncryptionUtils {
 			KeyFactory kf = KeyFactory.getInstance("RSA");
 			pk = kf.generatePrivate(spec);
 			return pk;
-		}  catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+		}  catch (Exception e) {
 			e.printStackTrace(System.err);
 			return null;
 		}

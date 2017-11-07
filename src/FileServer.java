@@ -83,7 +83,7 @@ public class FileServer extends Server {
 				fos = new FileOutputStream("FS_PrivKey");
 			    fos.write(this.getPrivateKey().getEncoded());
 			    fos.close();
-			} catch (IOException | NoSuchAlgorithmException ex) {
+			} catch (Exception ex) {
 				System.err.println("Couldn't generate new keys.");
 				e.printStackTrace(System.err);
 				System.exit(1);
