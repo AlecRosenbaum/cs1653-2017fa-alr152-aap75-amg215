@@ -53,16 +53,6 @@ public class GroupServer extends Server {
 			System.out.println("No users currently exist. Your account will be the administrator.");
 			System.out.print("Enter your username: ");
 			String username = console.next();
-			System.out.println("Please enter a new password, must be between 8-16 characters: ");
-			String newPassword = console.next();
-			if(newPassword.length() <8 || newPassword.length() > 16) {
-				
-				do {
-					System.out.println("Please enter a valid password, must be between 8-16 characters: ");
-					newPassword = console.next();
-					
-				}while(newPassword.length() <8 || newPassword.length() > 16);
-			}
 
 			//Create a new list, add current user to the ADMIN group. They now own the ADMIN group.
 			userList = new UserList();
