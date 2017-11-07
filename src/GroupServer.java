@@ -28,6 +28,19 @@ public class GroupServer extends Server {
 	public GroupServer(int _port) {
 		super(_port, "ALPHA");
 	}
+	public String getRandomString() {
+		
+		Random rand = new Random();
+		StringBuilder sb = new StringBuilder();
+		String charList = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+		for(int i = 0; i < 8; i++) {
+			
+			int charN = rand.nextInt(charList.length());
+			sb.append(charList.charAt(charN));
+		}
+		
+		return sb.toString();
+	}
 
 	@SuppressWarnings("unchecked")
 	public void start() {
@@ -53,10 +66,20 @@ public class GroupServer extends Server {
 			System.out.println("No users currently exist. Your account will be the administrator.");
 			System.out.print("Enter your username: ");
 			String username = console.next();
+			System.out.println("Please enter a new password, must be between 8-16 characters: ");
+			String newPassword = console.next();
+			if(newPassword.length() <8 || newPassword.length() > 16) {
+				
+				do {
+					System.out.println("Please enter a valid password, must be between 8-16 characters: ");
+					newPassword = console.next();
+					
+				}while(newPassword.length() <8 || newPassword.length() > 16);
+			}
 
 			//Create a new list, add current user to the ADMIN group. They now own the ADMIN group.
 			userList = new UserList();
-			userList.addUser(username);
+			userList.addUser(username, getRandomString(), newPassword);
 			userList.addGroup(username, "ADMIN");
 			userList.addOwnership(username, "ADMIN");
 		} catch (IOException e) {

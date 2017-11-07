@@ -119,7 +119,7 @@ public class RunClient {
         
         System.out.print("Enter user name: ");
         String u = console.nextLine();
-        if(group_client.isLocked(u) == true) {
+        if(group_client.isLocked(u)) {
         	
         	System.out.println("Your account has been locked due to too many failed login attempts. Please contact an administrator to unlock");
 			try {
@@ -136,7 +136,7 @@ public class RunClient {
 		if(group_client.checkPassword(u, password) == false) {
 			int tries = 4;
 			do {
-				System.out.println("Password Incorrect, you have " + tries + "more attempts before being locked out" );
+				System.out.println("Password Incorrect, you have " + tries + " more attempts before being locked out" );
 				password = console.next();
 				tries --;
 				

@@ -3,6 +3,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 
+import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
@@ -160,7 +161,8 @@ import javax.crypto.spec.PBEKeySpec;
 			}
 		     try {
 		    	 
-				derivedKey = secretKey.generateSecret(spec).getEncoded();
+		    	SecretKey key = secretKey.generateSecret(spec);
+				derivedKey = key.getEncoded();
 				needsPassword = false;
 				
 			} catch (InvalidKeySpecException e) {
@@ -181,18 +183,21 @@ import javax.crypto.spec.PBEKeySpec;
 				e1.printStackTrace();
 			}
 		     try {
-		    	 
-				dk = secretKey.generateSecret(spec).getEncoded();
+		    	SecretKey key = secretKey.generateSecret(spec);
+				dk = key.getEncoded();
 				
 			} catch (InvalidKeySpecException e) {
 	
 				e.printStackTrace();
 			}
 		    if(Arrays.equals(derivedKey, dk)){
-		    	
 		    	return true;
 		    }
-		    return false;
+		    else {
+		    	System.out.println(derivedKey.toString());
+			    return false;
+		    }
+
 		}
 		public void lockUser() {
 			

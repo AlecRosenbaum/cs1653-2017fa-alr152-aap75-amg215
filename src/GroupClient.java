@@ -302,11 +302,18 @@ public class GroupClient extends Client implements GroupClientInterface {
 				//If server indicates success, return true
 				if(response.getMessage().equals("OK"))
 				{
-					return true;
+					//If there is a token in the Envelope, return it 
+					ArrayList<Object> temp = null;
+					temp = response.getObjContents();
+					if(temp.size() == 1)
+					{
+						boolean bool = (boolean)temp.get(0);
+						System.out.println("bool");
+						return bool;				
+					}
 				}
 				
-				
-				return false;
+				return true;
 			}
 			catch(Exception e)
 			{
@@ -384,18 +391,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 			
 				
 				response = (Envelope) this.readObjectFromInput();
-				
 				//If server indicates success, return true
 				if(response.getMessage().equals("OK"))
 				{
 					//If there is a token in the Envelope, return it 
 					ArrayList<Object> temp = null;
 					temp = response.getObjContents();
-					
 					if(temp.size() == 1)
 					{
 						boolean bool = (boolean)temp.get(0);
-						return bool;
+						return bool;				
 					}
 				}
 				
