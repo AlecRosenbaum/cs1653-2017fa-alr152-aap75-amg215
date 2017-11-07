@@ -53,6 +53,7 @@ public class GroupServer extends Server {
 			System.out.println("No users currently exist. Your account will be the administrator.");
 			System.out.print("Enter your username: ");
 			String username = console.next();
+			System.out.println("The default administrator password is 'admin'");
 
 			//Create a new list, add current user to the ADMIN group. They now own the ADMIN group.
 			userList = new UserList();
