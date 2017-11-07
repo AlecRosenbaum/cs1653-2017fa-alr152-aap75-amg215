@@ -175,7 +175,7 @@ public class RunClient {
                                          "\tdeleteuser [username]\n" +
                                          "\t\tDeletes existing user.\n" +
                                          "\tchangepassword [user] [current password] [new password]\n" +
-                                         "\t\tChanges current user's password.\n" +
+                                         "\t\tChanges a user's password.\n" +
                                          "\tcreategroup [groupname]\n" +
                                          "\t\tCreates new group.\n" +
                                          "\tdeletegroup [groupname]\n" +
