@@ -1,10 +1,11 @@
 /* FileClient provides all the client functionality regarding the file server */
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.io.IOException;
 import java.util.List;
+import java.security.PublicKey;
+import java.net.Socket;
 
 public class FileClient extends Client implements FileClientInterface {
 
@@ -30,6 +31,23 @@ public class FileClient extends Client implements FileClientInterface {
 
 		return true;
 	}
+
+
+
+    public PublicKey initialConnect(String server, int port)
+    {
+		try {
+			sock = new Socket(server, port);		
+			output = new ObjectOutputStream(sock.getOutputStream());
+			input = new ObjectInputStream(sock.getInputStream());
+	
+			output.writeObject("key request");
+			return (PublicKey)input.readObject();
+			
+		} catch( Exception e) {
+			return null;
+		}			
+    }
 
 	public boolean download(String sourceFile, String destFile, UserToken token) {
 		if (sourceFile.charAt(0) == '/') {

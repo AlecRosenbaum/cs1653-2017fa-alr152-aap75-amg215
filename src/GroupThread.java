@@ -378,6 +378,9 @@ public class GroupThread extends Thread {
 			if (my_gs.groups.contains(groupname)) {
 				System.out.println("Group already exists.");
 				return false;
+			} else if (groupname.contains(",")) {
+				System.out.println("Group name isn't valid. It contains a ','.");
+				return false;
 			} else {
 				// add group to list
 				my_gs.groups.add(groupname);
