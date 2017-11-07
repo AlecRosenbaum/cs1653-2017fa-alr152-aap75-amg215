@@ -91,6 +91,10 @@ import java.util.*;
 		public synchronized boolean validate(String user, String password) {
 			return list.get(user).checkPassword(password);
 		}
+
+		public synchronized void changePassword(String user, String newPassword) {
+			list.get(user).setPassword(newPassword);
+		}
 		
 	
 	class User implements java.io.Serializable {
@@ -101,13 +105,20 @@ import java.util.*;
 		private static final long serialVersionUID = -6699986336399821598L;
 		private ArrayList<String> groups;
 		private ArrayList<String> ownership;
-		private String password;
+		private byte[] salt;
+		private byte[] password;
 		
 		public User(String password)
 		{
 			groups = new ArrayList<String>();
 			ownership = new ArrayList<String>();
-			this.password = password;
+			
+			// generate salt
+			this.salt = new byte[64];
+			new Random().nextBytes(this.salt);
+			
+			// set password
+			this.password = this.hash(password);
 		}
 		
 		public ArrayList<String> getGroups()
@@ -153,11 +164,19 @@ import java.util.*;
 		}
 
 		public boolean checkPassword(String password) {
-			return this.password.equals(password);
+			return Arrays.equals(this.password, this.hash(password)); 
 		}
 		
 		public void setPassword(String password) {
-			this.password = password;
+			this.password = this.hash(password);
+		}
+
+		private byte[] hash(String password) {
+			try {
+				return EncryptionUtils.pbkdf2(password, this.salt);
+			} catch (Exception e) {
+				return null;
+			}
 		}
 
 	}

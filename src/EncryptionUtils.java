@@ -1,9 +1,11 @@
 import java.io.*;
 import javax.crypto.*;
+import javax.crypto.spec.*;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.util.*;
 
 public abstract class EncryptionUtils {
 
@@ -123,5 +125,30 @@ public abstract class EncryptionUtils {
 			return null;
 		}
 	}
+
+	public static byte[] pbkdf2(String password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+		return pbkdf2(password.toCharArray(), salt, 4096, 256);
+	}
+
+	/**
+	 *  Computes the PBKDF2 hash of a password.
+	 *
+	 * @param   password    the password to hash.
+	 * @param   salt        the salt
+	 * @param   iterations  the iteration count (slowness factor)
+	 * @param   bits        the length of the hash to compute in bits
+	 * @return              the PBDKF2 hash of the password
+	 */
+	public static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int bits) throws NoSuchAlgorithmException, InvalidKeySpecException {
+		PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, bits);
+		SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+		return skf.generateSecret(spec).getEncoded();
+	}
+
+	public static String generateRandomString(int length) {
+		// this will work up to 32 characters
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        return uuid.substring(0, length);
+    }
 
 }
