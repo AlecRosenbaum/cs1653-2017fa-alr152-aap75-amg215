@@ -71,7 +71,7 @@ public class FileServer extends Server {
 		} catch (FileNotFoundException e) {
 			try {
 				// generate new keypair
-				KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+				KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
 				keyGen.initialize(2048);
 				this.setKeys(keyGen.genKeyPair());
 
