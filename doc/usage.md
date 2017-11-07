@@ -25,7 +25,7 @@ Note that the port number argument to `RunFileServer` is optional.  This argumen
 
 The file server will create a shared_files inside the working directory if one does not exist. The file server is now online.
 
-Also note that the public and private keys for the group server will be saved locally to `FS_Pubkey` and `FS_PrivKey` respectively. If these files are present when the group server is started, those keys will be used.
+Also note that the public and private keys for the file server will be saved locally to `FS_Pubkey` and `FS_PrivKey` respectively. If these files are present when the group server is started, those keys will be used.
 
 ## Resetting the Group or File Server
 
