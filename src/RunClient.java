@@ -145,6 +145,7 @@ public class RunClient {
         UserToken mytoken = group_client.getToken(u, p);
         if (mytoken == null) {
             System.out.println("Login Unsuccessful");
+            return;
         } else {
             System.out.println("Login sucessful: " + mytoken.getSubject());
         }
