@@ -11,16 +11,22 @@ public abstract class EncryptionUtils {
 
 	public static byte[] encrypt(SecretKey key, Serializable obj) {
 		try {
-			return serialize(obj);
+			final Cipher c = Cipher.getInstance("AES", "BC");
+            c.init(Cipher.ENCRYPT_MODE, key);
+			return c.doFinal(serialize(obj));
 		} catch (Exception e) {
+			e.printStackTrace(System.err);
 			return null;
 		}
 	}
 
 	public static Object decrypt(SecretKey key, byte[] cypherText) {
 		try {
-			return deserialize(cypherText);
+			final Cipher c = Cipher.getInstance("AES", "BC");
+            c.init(Cipher.DECRYPT_MODE, key);
+			return deserialize(c.doFinal(cypherText));
 		} catch (Exception e) {
+			e.printStackTrace(System.err);
 			return null;
 		}
 	}
@@ -28,6 +34,7 @@ public abstract class EncryptionUtils {
 	public static byte[] serialize(Object obj) throws IOException {
 		ByteArrayOutputStream b = new ByteArrayOutputStream();
 		ObjectOutputStream o = new ObjectOutputStream(b);
+		o.writeObject(obj);
 		return b.toByteArray();		
 	}
 
@@ -48,8 +55,8 @@ public abstract class EncryptionUtils {
 	 *
 	 * @return     the signature
 	 */
-	public static byte[] sign(final String plaintext, final PrivateKey key) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException  {
-		Signature sig = Signature.getInstance("SHA256withRSA");
+	public static byte[] sign(final String plaintext, final PrivateKey key) throws NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException  {
+		Signature sig = Signature.getInstance("SHA256withRSA", "BC");
 		sig.initSign(key);
 		sig.update(plaintext.getBytes());
 
@@ -69,11 +76,12 @@ public abstract class EncryptionUtils {
 	 */
 	public static boolean verify(final byte[] signature, final String plaintext, final PublicKey key) {
 		try {
-			Signature sig = Signature.getInstance("SHA256withRSA");
+			Signature sig = Signature.getInstance("SHA256withRSA", "BC");
 			sig.initVerify(key);
 			sig.update(plaintext.getBytes());
 			return sig.verify(signature);
 		} catch (Exception e) {
+			e.printStackTrace(System.err);
 			return false;
 		}
 	}
@@ -90,7 +98,7 @@ public abstract class EncryptionUtils {
 			fis.close();
 
 			X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-			KeyFactory kf = KeyFactory.getInstance("RSA");
+			KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
 			pk = kf.generatePublic(spec);
 			return pk;
 		} catch (Exception e) {
@@ -112,7 +120,7 @@ public abstract class EncryptionUtils {
 			fis.close();
 
 			PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-			KeyFactory kf = KeyFactory.getInstance("RSA");
+			KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
 			pk = kf.generatePrivate(spec);
 			return pk;
 		}  catch (Exception e) {
@@ -121,7 +129,7 @@ public abstract class EncryptionUtils {
 		}
 	}
 
-	public static byte[] pbkdf2(String password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+	public static byte[] pbkdf2(String password, byte[] salt) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException {
 		return pbkdf2(password.toCharArray(), salt, 4096, 256);
 	}
 
@@ -134,9 +142,9 @@ public abstract class EncryptionUtils {
 	 * @param   bits        the length of the hash to compute in bits
 	 * @return              the PBDKF2 hash of the password
 	 */
-	public static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int bits) throws NoSuchAlgorithmException, InvalidKeySpecException {
+	public static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int bits) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException {
 		PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, bits);
-		SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+		SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256", "BC");
 		return skf.generateSecret(spec).getEncoded();
 	}
 

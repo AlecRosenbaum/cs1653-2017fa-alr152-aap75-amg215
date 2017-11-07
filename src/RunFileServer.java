@@ -1,8 +1,13 @@
 /* Driver program for FileSharing File Server */
+import java.security.*;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RunFileServer {
 	
 	public static void main(String[] args) {
+        Security.addProvider(new BouncyCastleProvider());
+		
 		if (args.length > 0) {
 			try {
 				FileServer server = new FileServer(Integer.parseInt(args[0]));

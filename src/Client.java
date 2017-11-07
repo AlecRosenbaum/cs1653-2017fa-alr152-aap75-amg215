@@ -45,10 +45,10 @@ public abstract class Client {
             DHParameterSpec paramSpec = new DHParameterSpec(p, g, 224);
 
             // Generate Key Pair
-            KeyPairGenerator aliceKpGen = KeyPairGenerator.getInstance("DH");
+            KeyPairGenerator aliceKpGen = KeyPairGenerator.getInstance("DH", "BC");
             aliceKpGen.initialize(paramSpec);
             KeyPair aliceKp = aliceKpGen.generateKeyPair();
-            KeyAgreement aKeyAgreement = KeyAgreement.getInstance("DH");
+            KeyAgreement aKeyAgreement = KeyAgreement.getInstance("DH", "BC");
             aKeyAgreement.init(aliceKp.getPrivate());
 
             output.writeObject(aliceKp.getPublic().getEncoded());
@@ -57,7 +57,7 @@ public abstract class Client {
             byte[] bobDH = (byte[]) input.readObject();
             if(serverPublicKey != null) {
                 byte[] signature = (byte[]) input.readObject();
-                Signature publicSignature = Signature.getInstance("SHA256withRSA");
+                Signature publicSignature = Signature.getInstance("SHA256withRSA", "BC");
                 publicSignature.initVerify(serverPublicKey);
                 publicSignature.update(bobDH);            
                 if(!publicSignature.verify(signature))
@@ -67,7 +67,7 @@ public abstract class Client {
                 }
             }
 
-            KeyFactory clientKeyFac = KeyFactory.getInstance("DH");
+            KeyFactory clientKeyFac = KeyFactory.getInstance("DH", "BC");
             X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bobDH);
             PublicKey bobsDHPubKey = clientKeyFac.generatePublic(x509KeySpec);
             aKeyAgreement.doPhase(bobsDHPubKey, true);

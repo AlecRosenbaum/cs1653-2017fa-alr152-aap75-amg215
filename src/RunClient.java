@@ -5,6 +5,7 @@ import java.security.*;
 import java.util.*;
 import java.lang.*;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RunClient {
 
@@ -27,7 +28,7 @@ public class RunClient {
         if(fileServerPublicKey == null) {
             fileServerPublicKey = new_file_client.initialConnect(url, port);
             try {
-                MessageDigest digest = MessageDigest.getInstance("SHA-256"); 
+                MessageDigest digest = MessageDigest.getInstance("SHA-256", "BC"); 
                 digest.reset();
                 digest.update(fileServerPublicKey.getEncoded());
                 System.out.print("Server Provided Public Key Fingerprint For Authentication:\n\n\t" + prettify(digest.digest()) + "\n\n" +
@@ -62,6 +63,8 @@ public class RunClient {
         //  - group server port
         //  - file server url
         //  - file server port
+        //  
+        Security.addProvider(new BouncyCastleProvider());
 
         if (args.length != 4 && args.length != 5) { //allow 5 for optional test arg
             System.out.println("Arguments are incorrect.");

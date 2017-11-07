@@ -52,7 +52,7 @@ public class FileThread extends Thread {
 			DHParameterSpec dhParamSpec = new DHParameterSpec(p, g, 224);
 
 			// Exchange information for DH
-			KeyFactory clientKeyFac = KeyFactory.getInstance("DH");
+			KeyFactory clientKeyFac = KeyFactory.getInstance("DH", "BC");
 			Object inputMessage = input.readObject();
 			byte[] DHinfo = null;
 			try {
@@ -71,15 +71,15 @@ public class FileThread extends Thread {
 			PublicKey bobDHPub = clientKeyFac.generatePublic(x509KeySpec);
 
 			// Create Bob DH Keys
-			KeyPairGenerator bobKpGen = KeyPairGenerator.getInstance("DH");
+			KeyPairGenerator bobKpGen = KeyPairGenerator.getInstance("DH", "BC");
 			bobKpGen.initialize(dhParamSpec);
 			KeyPair bobsKeys = bobKpGen.generateKeyPair();
 
-			KeyAgreement bobKeyAgreement = KeyAgreement.getInstance("DH");
+			KeyAgreement bobKeyAgreement = KeyAgreement.getInstance("DH", "BC");
 			bobKeyAgreement.init(bobsKeys.getPrivate());
 			bobKeyAgreement.doPhase(bobDHPub, true);
 
-			Signature privateSignature = Signature.getInstance("SHA256withRSA");
+			Signature privateSignature = Signature.getInstance("SHA256withRSA", "BC");
 			privateSignature.initSign(my_fs.getPrivateKey());
 			privateSignature.update(bobsKeys.getPublic().getEncoded());		
 			byte[] signature = privateSignature.sign();
