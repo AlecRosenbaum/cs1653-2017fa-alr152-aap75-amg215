@@ -14,6 +14,7 @@ import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchProviderException;
 
 public class GroupServer extends Server {
 
@@ -141,7 +142,7 @@ public class GroupServer extends Server {
 
 	}
 
-	public byte[] sign(final String plaintext) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+	public byte[] sign(final String plaintext) throws NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
 		return EncryptionUtils.sign(plaintext, this.getPrivateKey());
 	}
 

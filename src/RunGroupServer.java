@@ -1,8 +1,13 @@
 /* Driver program for FileSharing Group Server */
+import java.security.*;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RunGroupServer {
 	
 	public static void main(String[] args) {
+        Security.addProvider(new BouncyCastleProvider());
+		
 		if (args.length> 0) {
 			try {
 				GroupServer server = new GroupServer(Integer.parseInt(args[0]));
