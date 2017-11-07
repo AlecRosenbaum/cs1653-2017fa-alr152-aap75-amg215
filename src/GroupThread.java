@@ -37,21 +37,21 @@ public class GroupThread extends Thread {
 			// negotiate diffie hellman
 
 			// Generate DH specs (2048-bit p, 224 bit key)
-            String p_hex = 
-                "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
-                "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
-                "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
-                "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED" +
-                "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3D" +
-                "C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F" +
-                "83655D23DCA3AD961C62F356208552BB9ED529077096966D" +
-                "670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B" +
-                "E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9" +
-                "DE2BCBF6955817183995497CEA956AE515D2261898FA0510" +
-                "15728E5A8AACAA68FFFFFFFFFFFFFFFF";            
-            BigInteger p = new BigInteger(p_hex, 16);
-            BigInteger g = BigInteger.valueOf(2);
-            DHParameterSpec dhParamSpec = new DHParameterSpec(p, g, 224);
+			String p_hex =
+			    "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
+			    "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
+			    "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
+			    "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED" +
+			    "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3D" +
+			    "C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F" +
+			    "83655D23DCA3AD961C62F356208552BB9ED529077096966D" +
+			    "670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B" +
+			    "E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9" +
+			    "DE2BCBF6955817183995497CEA956AE515D2261898FA0510" +
+			    "15728E5A8AACAA68FFFFFFFFFFFFFFFF";
+			BigInteger p = new BigInteger(p_hex, 16);
+			BigInteger g = BigInteger.valueOf(2);
+			DHParameterSpec dhParamSpec = new DHParameterSpec(p, g, 224);
 
 			// Exchange information for DH
 			KeyFactory clientKeyFac = KeyFactory.getInstance("DH");
@@ -82,7 +82,8 @@ public class GroupThread extends Thread {
 
 				if (message.getMessage().equals("GET")) { //Client wants a token
 					String username = (String)message.getObjContents().get(0); //Get the username
-					if (username == null) {
+					String password = (String)message.getObjContents().get(1); //Get the password
+					if (username == null || my_gs.userList.lockedOut(username) || !my_gs.userList.validate(username, password)) {
 						response = new Envelope("FAIL");
 						response.addObject(null);
 						writeObjectToOutput(response);
@@ -105,8 +106,10 @@ public class GroupThread extends Thread {
 								String username = (String)message.getObjContents().get(0); //Extract the username
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
 
-								if (createUser(username, yourToken)) {
+								String startpass = EncryptionUtils.generateRandomString(8);
+								if (createUser(username, yourToken, startpass)) {
 									response = new Envelope("OK"); //Success
+									response.addObject(startpass);
 								}
 							}
 						}
@@ -230,6 +233,25 @@ public class GroupThread extends Thread {
 						}
 					}
 					writeObjectToOutput(response);
+				} else if (message.getMessage().equals("CPASSWORD")) { //Client wants to change password
+					if (message.getObjContents().size() < 4) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null && message.getObjContents().get(1) != null && message.getObjContents().get(2) != null && message.getObjContents().get(3) != null) {
+							Token token = (Token)message.getObjContents().get(0); //Extract the token
+							String username = (String)message.getObjContents().get(1); //Extract the username
+							String oldPass = (String)message.getObjContents().get(2); //Extract the old pass
+							String newPass = (String)message.getObjContents().get(3); //Extract the new pass
+
+							if (changePassword(token, username, oldPass, newPass)) {
+								response = new Envelope("OK"); //Success
+							}
+						}
+					}
+
+					writeObjectToOutput(response);
 				} else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
 					socket.close(); //Close the socket
 					proceed = false; //End this communication loop
@@ -251,23 +273,48 @@ public class GroupThread extends Thread {
 			//Issue a new token with server's name, user's name, and user's groups
 			Token yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username));
 
-			// Sign token 
+			// Sign token
 			try {
 				yourToken.setSignature(my_gs.sign(yourToken.stringify()));
 			} catch (Exception e) {
 				System.err.println("Error signing token.");
 				e.printStackTrace(System.err);
 			}
-			
+
 			return yourToken;
 		} else {
 			return null;
 		}
 	}
 
+	//Method to change password
+	private boolean changePassword(Token token, String username, String oldPass, String newPass) {
+		//Check that user exists
+		if (my_gs.userList.checkUser(username)) {
+			// check if accound is locked
+			if (my_gs.userList.lockedOut(username)) {
+				// only an admin can change
+				if (my_gs.userList.getUserGroups(token.getSubject()).contains("ADMIN")) {
+					// user is an admin, set new password
+					my_gs.userList.changePassword(username, newPass);
+					return true;
+				}
+			} else {
+				// validate old password
+				if (my_gs.userList.validate(username, oldPass)) {
+					// set new password
+					my_gs.userList.changePassword(username, newPass);
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 
 	//Method to create a user
-	private boolean createUser(String username, UserToken yourToken) {
+	private boolean createUser(String username, UserToken yourToken, String initPass) {
 		String requester = yourToken.getSubject();
 
 		//Check if requester exists
@@ -280,7 +327,7 @@ public class GroupThread extends Thread {
 				if (my_gs.userList.checkUser(username)) {
 					return false; //User already exists
 				} else {
-					my_gs.userList.addUser(username);
+					my_gs.userList.addUser(username, initPass);
 					return true;
 				}
 			} else {

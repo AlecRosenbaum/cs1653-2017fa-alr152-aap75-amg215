@@ -56,7 +56,7 @@ public class GroupServer extends Server {
 
 			//Create a new list, add current user to the ADMIN group. They now own the ADMIN group.
 			userList = new UserList();
-			userList.addUser(username);
+			userList.addUser(username, "admin");
 			userList.addGroup(username, "ADMIN");
 			userList.addOwnership(username, "ADMIN");
 		} catch (IOException e) {

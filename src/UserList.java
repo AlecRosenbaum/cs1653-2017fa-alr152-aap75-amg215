@@ -10,9 +10,9 @@ import java.util.*;
 		private static final long serialVersionUID = 7600343803563417992L;
 		private Hashtable<String, User> list = new Hashtable<String, User>();
 		
-		public synchronized void addUser(String username)
+		public synchronized void addUser(String username, String password)
 		{
-			User newUser = new User();
+			User newUser = new User(password);
 			list.put(username, newUser);
 		}
 		
@@ -87,6 +87,18 @@ import java.util.*;
 		{
 			list.get(user).removeOwnership(groupname);
 		}
+
+		public synchronized boolean validate(String user, String password) {
+			return list.get(user).checkPassword(password);
+		}
+
+		public synchronized boolean lockedOut(String user) {
+			return list.get(user).lockedOut();
+		}
+
+		public synchronized void changePassword(String user, String newPassword) {
+			list.get(user).setPassword(newPassword);
+		}
 		
 	
 	class User implements java.io.Serializable {
@@ -97,11 +109,23 @@ import java.util.*;
 		private static final long serialVersionUID = -6699986336399821598L;
 		private ArrayList<String> groups;
 		private ArrayList<String> ownership;
+		private byte[] salt;
+		private byte[] password;
+		private int attempts;
 		
-		public User()
+		public User(String password)
 		{
 			groups = new ArrayList<String>();
 			ownership = new ArrayList<String>();
+			
+			// generate salt
+			this.salt = new byte[64];
+			new Random().nextBytes(this.salt);
+			
+			// set password
+			this.password = this.hash(password);
+
+			attempts = 0;
 		}
 		
 		public ArrayList<String> getGroups()
@@ -145,7 +169,34 @@ import java.util.*;
 				}
 			}
 		}
+
+		public boolean checkPassword(String password) {
+			if (Arrays.equals(this.password, this.hash(password))) {
+				attempts = 0;
+				return true;
+			} else {
+				attempts += 1;
+				return false;
+			}
+		}
+
+		public boolean lockedOut() {
+			return attempts >= 5;
+		}
 		
+		public void setPassword(String password) {
+			attempts = 0;
+			this.password = this.hash(password);
+		}
+
+		private byte[] hash(String password) {
+			try {
+				return EncryptionUtils.pbkdf2(password, this.salt);
+			} catch (Exception e) {
+				return null;
+			}
+		}
+
 	}
 	
 }	

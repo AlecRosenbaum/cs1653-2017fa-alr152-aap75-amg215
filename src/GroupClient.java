@@ -7,252 +7,235 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class GroupClient extends Client implements GroupClientInterface {
-	 
-	 public UserToken getToken(String username)
-	 {
-		try
-		{
+
+	public UserToken getToken(String username, String password) {
+		try {
 			UserToken token = null;
 			Envelope message = null, response = null;
-		 		 	
+
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
+			message.addObject(password); //Add password string
 			this.writeObjectToOutput(message);
-		
+
 			//Get the response from the server
 			response = (Envelope) this.readObjectFromInput();
-			
+
 			//Successful response
-			if(response.getMessage().equals("OK"))
-			{
-				//If there is a token in the Envelope, return it 
+			if (response.getMessage().equals("OK")) {
+				//If there is a token in the Envelope, return it
 				ArrayList<Object> temp = null;
 				temp = response.getObjContents();
-				
-				if(temp.size() == 1)
-				{
+
+				if (temp.size() == 1) {
 					token = (UserToken)temp.get(0);
 					return token;
 				}
 			}
-			
+
 			return null;
-		}
-		catch(Exception e)
-		{
+		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 			return null;
 		}
-		
-	 }
-	 
-	 public boolean createUser(String username, UserToken token)
-	 {
-		 try
-			{
-				Envelope message = null, response = null;
-				//Tell the server to create a user
-				message = new Envelope("CUSER");
-				message.addObject(username); //Add user name string
-				message.addObject(token); //Add the requester's token
-				this.writeObjectToOutput(message);
-			
-				
-				response = (Envelope) this.readObjectFromInput();
-				
-				//If server indicates success, return true
-				if(response.getMessage().equals("OK"))
-				{
-					return true;
-				}
-				
-				
-				return false;
+
+	}
+
+	public String createUser(String username, UserToken token) {
+		try {
+			Envelope message = null, response = null;
+			//Tell the server to create a user
+			message = new Envelope("CUSER");
+			message.addObject(username); //Add user name string
+			message.addObject(token); //Add the requester's token
+			this.writeObjectToOutput(message);
+
+
+			response = (Envelope) this.readObjectFromInput();
+
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return (String)response.getObjContents().get(0); // the random password string
 			}
-			catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-				return false;
+
+			return null;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return null;
+		}
+	}
+
+	public boolean deleteUser(String username, UserToken token) {
+		try {
+			Envelope message = null, response = null;
+
+			//Tell the server to delete a user
+			message = new Envelope("DUSER");
+			message.addObject(username); //Add user name
+			message.addObject(token);  //Add requester's token
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return true;
 			}
-	 }
-	 
-	 public boolean deleteUser(String username, UserToken token)
-	 {
-		 try
-			{
-				Envelope message = null, response = null;
-			 
-				//Tell the server to delete a user
-				message = new Envelope("DUSER");
-				message.addObject(username); //Add user name
-				message.addObject(token);  //Add requester's token
-				this.writeObjectToOutput(message);
-			
-				response = (Envelope) this.readObjectFromInput();
-				
-				//If server indicates success, return true
-				if(response.getMessage().equals("OK"))
-				{
-					return true;
-				}
-				
-				return false;
+
+			return false;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	}
+
+	public boolean createGroup(String groupname, UserToken token) {
+		try {
+			Envelope message = null, response = null;
+			//Tell the server to create a group
+			message = new Envelope("CGROUP");
+			message.addObject(groupname); //Add the group name string
+			message.addObject(token); //Add the requester's token
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return true;
 			}
-			catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-				return false;
+
+			return false;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	}
+
+	public boolean deleteGroup(String groupname, UserToken token) {
+		try {
+			Envelope message = null, response = null;
+			//Tell the server to delete a group
+			message = new Envelope("DGROUP");
+			message.addObject(groupname); //Add group name string
+			message.addObject(token); //Add requester's token
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return true;
 			}
-	 }
-	 
-	 public boolean createGroup(String groupname, UserToken token)
-	 {
-		 try
-			{
-				Envelope message = null, response = null;
-				//Tell the server to create a group
-				message = new Envelope("CGROUP");
-				message.addObject(groupname); //Add the group name string
-				message.addObject(token); //Add the requester's token
-				this.writeObjectToOutput(message); 
-			
-				response = (Envelope) this.readObjectFromInput();
-				
-				//If server indicates success, return true
-				if(response.getMessage().equals("OK"))
-				{
-					return true;
-				}
-				
-				return false;
-			}
-			catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-				return false;
-			}
-	 }
-	 
-	 public boolean deleteGroup(String groupname, UserToken token)
-	 {
-		 try
-			{
-				Envelope message = null, response = null;
-				//Tell the server to delete a group
-				message = new Envelope("DGROUP");
-				message.addObject(groupname); //Add group name string
-				message.addObject(token); //Add requester's token
-				this.writeObjectToOutput(message); 
-			
-				response = (Envelope) this.readObjectFromInput();
-				//If server indicates success, return true
-				if(response.getMessage().equals("OK"))
-				{
-					return true;
-				}
-				
-				return false;
-			}
-			catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-				return false;
-			}
-	 }
-	 
-	 @SuppressWarnings("unchecked")
-	public List<String> listMembers(String group, UserToken token)
-	 {
-		 try
-		 {
-			 Envelope message = null, response = null;
-			 //Tell the server to return the member list
-			 message = new Envelope("LMEMBERS");
-			 message.addObject(group); //Add group name string
-			 message.addObject(token); //Add requester's token
-			 this.writeObjectToOutput(message); 
-			 
-			 response = (Envelope) this.readObjectFromInput();
-			 
-			 //If server indicates success, return the member list
-			 if(response.getMessage().equals("OK"))
-			 { 
+
+			return false;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<String> listMembers(String group, UserToken token) {
+		try {
+			Envelope message = null, response = null;
+			//Tell the server to return the member list
+			message = new Envelope("LMEMBERS");
+			message.addObject(group); //Add group name string
+			message.addObject(token); //Add requester's token
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+
+			//If server indicates success, return the member list
+			if (response.getMessage().equals("OK")) {
 				return (List<String>)response.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
-			 }
-				
-			 return null;
-			 
-		 }
-		 catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-				return null;
 			}
-	 }
-	 
-	 public boolean addUserToGroup(String username, String groupname, UserToken token)
-	 {
-		 try
-			{
-				Envelope message = null, response = null;
-				//Tell the server to add a user to the group
-				message = new Envelope("AUSERTOGROUP");
-				message.addObject(username); //Add user name string
-				message.addObject(groupname); //Add group name string
-				message.addObject(token); //Add requester's token
-				this.writeObjectToOutput(message); 
-			
-				response = (Envelope) this.readObjectFromInput();
-				//If server indicates success, return true
-				if(response.getMessage().equals("OK"))
-				{
-					return true;
-				}
-				
-				return false;
+
+			return null;
+
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return null;
+		}
+	}
+
+	public boolean addUserToGroup(String username, String groupname, UserToken token) {
+		try {
+			Envelope message = null, response = null;
+			//Tell the server to add a user to the group
+			message = new Envelope("AUSERTOGROUP");
+			message.addObject(username); //Add user name string
+			message.addObject(groupname); //Add group name string
+			message.addObject(token); //Add requester's token
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return true;
 			}
-			catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-				return false;
+
+			return false;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	}
+
+	public boolean deleteUserFromGroup(String username, String groupname, UserToken token) {
+		try {
+			Envelope message = null, response = null;
+			//Tell the server to remove a user from the group
+			message = new Envelope("RUSERFROMGROUP");
+			message.addObject(username); //Add user name string
+			message.addObject(groupname); //Add group name string
+			message.addObject(token); //Add requester's token
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return true;
 			}
-	 }
-	 
-	 public boolean deleteUserFromGroup(String username, String groupname, UserToken token)
-	 {
-		 try
-			{
-				Envelope message = null, response = null;
-				//Tell the server to remove a user from the group
-				message = new Envelope("RUSERFROMGROUP");
-				message.addObject(username); //Add user name string
-				message.addObject(groupname); //Add group name string
-				message.addObject(token); //Add requester's token
-				this.writeObjectToOutput(message);
-			
-				response = (Envelope) this.readObjectFromInput();
-				//If server indicates success, return true
-				if(response.getMessage().equals("OK"))
-				{
-					return true;
-				}
-				
-				return false;
+
+			return false;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	}
+
+	public boolean changePassword(UserToken token, String username, String oldPass, String newPass) {
+		try {
+			Envelope message = null, response = null;
+			message = new Envelope("CPASSWORD");
+			message.addObject(token); //Add token
+			message.addObject(username); //Add user name string
+			message.addObject(oldPass); //Add group name string
+			message.addObject(newPass); //Add requester's token
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return true;
 			}
-			catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-				return false;
-			}
-	 }
+
+			return false;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	}
 
 }
