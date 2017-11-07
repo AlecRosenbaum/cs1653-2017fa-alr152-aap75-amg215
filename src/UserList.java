@@ -45,7 +45,7 @@ import java.util.*;
 		
 		public synchronized ArrayList<String> getGroupMembers(String groupname)
 		{
-			ArrayList<String> groupmembers = new ArrayList<User>(list.keySet());
+			ArrayList<String> groupmembers = new ArrayList<String>(list.keySet());
 			ArrayList<User> groupUsers = new ArrayList<User>(list.values());
 			ArrayList<String> listmembers = new ArrayList<String>();
 			for(int i = 0; i < groupUsers.size(); i++) {
