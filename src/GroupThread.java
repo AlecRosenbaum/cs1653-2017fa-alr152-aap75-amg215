@@ -263,6 +263,9 @@ public class GroupThread extends Thread {
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
+			Envelope response = new Envelope("FAIL");
+			response.addObject(null);
+			writeObjectToOutput(response);
 		}
 	}
 
@@ -293,7 +296,7 @@ public class GroupThread extends Thread {
 		if (my_gs.userList.checkUser(username)) {
 			// check if accound is locked
 			if (my_gs.userList.lockedOut(username)) {
-				// only an admin can change
+				// only an admin can change	
 				if (my_gs.userList.getUserGroups(token.getSubject()).contains("ADMIN")) {
 					// user is an admin, set new password
 					my_gs.userList.changePassword(username, newPass);
