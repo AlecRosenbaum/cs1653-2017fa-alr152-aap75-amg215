@@ -44,7 +44,7 @@ public class FileClient extends Client implements FileClientInterface {
 			output.writeObject("key request");
 			return (PublicKey)input.readObject();
 			
-		} catch( Exception e) {
+		} catch(Exception e) {
 			return null;
 		}			
     }

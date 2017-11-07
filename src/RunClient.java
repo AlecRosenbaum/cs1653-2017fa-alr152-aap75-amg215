@@ -1,7 +1,7 @@
 /* Driver program for Client */
 import java.util.ArrayList;
 import java.io.*;
-import java.security.PublicKey;
+import java.security.*;
 import java.util.*;
 import java.lang.*;
 
@@ -9,6 +9,52 @@ import java.lang.*;
 public class RunClient {
 
     private static String fileServersPath = "APPROVED_FILE_SERVERS.bin";
+
+    private static Scanner console;
+    private static String group_server_url;
+    private static int group_server_port;
+    private static String file_server_url;
+    private static int file_server_port;                
+    private static GroupClient group_client;  
+    private static FileClient file_client;
+    private static FileClient new_file_client;
+    private static PublicKey fileServerPublicKey;
+    private static ApprovedFileServerList approvedFileServers;    
+
+    public static boolean fconnect(String url, int port) {
+        new_file_client = new FileClient();
+        fileServerPublicKey = approvedFileServers.checkServer(url, port);
+        if(fileServerPublicKey == null) {
+            fileServerPublicKey = new_file_client.initialConnect(url, port);
+            try {
+                MessageDigest digest = MessageDigest.getInstance("SHA-256"); 
+                digest.reset();
+                digest.update(fileServerPublicKey.getEncoded());
+                System.out.print("Server Provided Public Key Fingerprint For Authentication:\n\n\t" + prettify(digest.digest()) + "\n\n" +
+                "Entery 'Y' to accept or 'N' to reject: ");
+            } catch (Exception e)
+            {
+                return false;
+            }     
+            if(console.nextLine().toUpperCase().equals("Y")) {
+                approvedFileServers.addServer(fileServerPublicKey, url, port);
+                new_file_client = new FileClient();
+            }else {
+                System.out.println("File Server Public Key NOT approved.");
+                return false;
+            }
+        }
+        if (new_file_client.connect(url, port, fileServerPublicKey)) {
+            System.out.println("Connected to file server " + url + ":" + port);
+            file_client = new_file_client;
+            file_server_url = url;
+            file_server_port = port;
+            return true;
+        } else {
+            System.out.println("Unable to connect to file server " + url + ":" + port);
+            return false;
+        }
+    }
 
     public static void main(String[] args) {
         // args:
@@ -23,16 +69,14 @@ public class RunClient {
         }
 
         // parse args
-        Scanner console = new Scanner(System.in);
-        String group_server_url = args[0];;
-        int group_server_port;
-        String file_server_url = args[2];
-        int file_server_port;                
-        GroupClient group_client = new GroupClient();        
-        FileClient file_client = new FileClient();
-        FileClient new_file_client = new FileClient();
-        PublicKey fileServerPublicKey = null;
-        ApprovedFileServerList approvedFileServers = new ApprovedFileServerList();
+        console = new Scanner(System.in);
+        group_server_url = args[0];
+        file_server_url = args[2];                
+        group_client = new GroupClient();        
+        file_client = new FileClient();
+        new_file_client = new FileClient();
+        fileServerPublicKey = null;
+        approvedFileServers = new ApprovedFileServerList();
         try {
             File approvedFileServersFile = new File(fileServersPath);
             if(approvedFileServersFile.exists() && !approvedFileServersFile.isDirectory()) { 
@@ -89,30 +133,8 @@ public class RunClient {
                 file_server_port = Integer.valueOf(console.nextLine());
             }
             firstTime = false;            
-            file_client = new FileClient();
-            new_file_client = new FileClient();
-            fileServerPublicKey = approvedFileServers.checkServer(file_server_url, file_server_port);
-            boolean connectToFileServer = true;
-            if(fileServerPublicKey == null) {
-                fileServerPublicKey = new_file_client.initialConnect(file_server_url, file_server_port);
-                System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.toString() + "\n\n" +
-                "Enter 'Y' to accept or 'N' to reject: ");
-                if(console.nextLine().toUpperCase().equals("Y")) {
-                    approvedFileServers.addServer(fileServerPublicKey, file_server_url, file_server_port);
-                    new_file_client = new FileClient();
-                }else {
-                    System.out.println("File Server Public Key NOT approved.");
-                    connectToFileServer = false;
-                }
-            }
-            if(connectToFileServer){
-                if (new_file_client.connect(file_server_url, file_server_port, fileServerPublicKey)) {
-                    System.out.println("Connected to file server " + file_server_url + ":" + file_server_port);
-                    file_client = new_file_client;
-                    success = true;
-                } else {
-                    System.out.println("Unable to connect to file server " + file_server_url + ":" + file_server_port);
-                }
+            if(fconnect(file_server_url, file_server_port)) {
+                success = true;
             }
         } while (!success);
         
@@ -191,28 +213,7 @@ public class RunClient {
                     case "fconnect":                        
                         url = inputArray[1];
                         port = Integer.parseInt(inputArray[2]);
-                        new_file_client = new FileClient();
-                        fileServerPublicKey = approvedFileServers.checkServer(url, port);
-                        if(fileServerPublicKey == null) {
-                            fileServerPublicKey = new_file_client.initialConnect(url, port);
-                            System.out.print("Server Provided Public Key For Authentication " + fileServerPublicKey.toString() + "\n\n" +
-                            "Entery 'Y' to accept or 'N' to reject: ");
-                            if(console.nextLine().toUpperCase().equals("Y")) {
-                                approvedFileServers.addServer(fileServerPublicKey, url, port);
-                                new_file_client = new FileClient();
-                            }else {
-                                System.out.println("File Server Public Key NOT approved.");
-                                break;
-                            }
-                        }
-                        if (new_file_client.connect(url, port, fileServerPublicKey)) {
-                            System.out.println("Connected to file server " + url + ":" + port);
-                            file_client = new_file_client;
-                            file_server_url = url;
-                            file_server_port = port;
-                        } else {
-                            System.out.println("Unable to connect to file server " + url + ":" + port);
-                        }
+                        fconnect(url, port);
                         break;
                     case "fdisconnect":
                         file_client.disconnect();
@@ -440,6 +441,33 @@ public class RunClient {
             group_client.disconnect();
             file_client.disconnect();
         }
+    }
+    
+    public static String prettify(byte[] input) {
+        System.out.println(input.length);
+        StringBuilder sb = new StringBuilder(input.length * 2);
+        for(byte b : input) {
+            sb.append(String.format("%02x", b));
+        }
+        
+        String output = "";
+        int counter = 0;
+        for(char c : sb.toString().toCharArray())
+        {
+            counter++;
+            output = output + c;
+            if(counter == 2) {
+                counter = 0;
+                output = output + ":"; 
+            }
+        }
+        if(output.charAt(output.length() - 1) == ':')
+        {
+            sb = new StringBuilder(output);
+            sb.deleteCharAt(output.length() - 1);
+            output = sb.toString();
+        }
+        return output.toUpperCase();
     }
 }
 
