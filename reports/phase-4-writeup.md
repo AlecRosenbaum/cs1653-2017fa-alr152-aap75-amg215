@@ -58,17 +58,49 @@ Within the context of this document, the term "fingerprint" shall refer to the S
 
 #### Description
 
+When a client communicates with a file or group server this threat states that messages sent between the user (**U**) and the server (**S**) can be reordered, saved for a replay attack, or modified by a malicious attacker. The following example shows how a malicious attacker (**A**) could intercept a message and reuse it to gain access to an unprotected server.
+
+* The attacker intercepts a username and password meant for a server.
+* **U** -> **A**: `<username, password>` 
+* **A** -> **S**: `<username, password>`
+* **S** -> **A**: `<authenticated token>`
+* Once an attacker has an authenticated token it can use it to make attacks on the server.
+
 #### Protection
 
+Threat 4 from phase three was dealt with using a Diffie Hellman exchange. This exchange is signed in the case of a file server. To protect against this threat we will use a signed Diffie Hellman exhange for all communication between a Server and a Client. The following is how this exchange works.
+
+* Bob picks random value a.
+* **B** -> **S**: `(g^a) mod q`
+* Server picks random value b and signs the message.
+* **S** -> **B**: `[(g^b) mod q]S^(-1)`
+* Bob validates signature and Bob and Server now have a shared key `K= g^(a*b) mod q`
+* **B** -> **S**: `{<message>}K`
+* **S** -> **B**: `{<message>}K`
+
 #### Argument
+
+This signed Diffie Hellman exhange protects from reorder, replay and modification attacks. An attacker intercepts either of the starting messages that setup the key the attacker will still be unable to learn the Key for the attacker will not have access to either b or a and no way to build g^(a*b) mod q. An attacker is also unable to reply to the inital message from Bob because attackers will be unable to sign the message. The attacker has no way to get access to the key and no way to trick the user or server into giving it any sensitive information.
 
 ### T6 - File Leakage
 
 #### Description
 
+This threat states that file servers cannot be trusted. Files stored on file servers will be able to be attained by malicious attackers. This means that the data on the file servers is not safe from attackers as, if left unprotected, the files can be read by the attacker.
+
 #### Protection
 
+Each file server (**S**) will create it's own AES-128 key. It will use this key to encrypt any files sent to it for storage. The encrypted files will then be stored on disk with the file names being the SHA-256 hash of the actual filename. If, later on, a user (**U**) requests these files with an approved token it will then decrypt the file and send it to the user. The following is a diagram of that exhcange with DHK being the Diffie Hellman key explained in T5, and K being the File server's storage key.
+
+* **U** -> **S** `<{<file>}DHK>`
+* **S** saves `{<file>}K` to disk using the filename `H(filename)`
+* **U** -> **S** `<download request for file>`
+* **S** s finds the file with the name `H(filename)` and decrypts with K.
+* **S** -> **U** `<{<file>}DHK>`
+
 #### Argument
+
+This protection protects attackers from reading files from an unsafe file server as the attackers do not have access to the AES-128 key. Attackers will also not be able to learn the names of the files stored on the machine as the AES-128 hash of the actual filename is impossible to reverse. The only thing attackers would be able to gain access to is the encrypted file. This also continues to work after group memberships change. If a user loses a group membership needed to view a file he/she will be unable to provide the token that they need to provide to the file server to gain access to a file.
 
 ### T7 - Token Theft
 
