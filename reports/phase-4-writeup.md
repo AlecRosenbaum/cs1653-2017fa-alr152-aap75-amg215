@@ -86,7 +86,7 @@ Threat 4 from phase three was dealt with using a Diffie Hellman exchange. This e
 
 #### Argument
 
-This signed Diffie Hellman exhange protects from reorder, replay and modification attacks. If an attacker intercepts either of the starting messages that sets up the Diffie Hellman key the attacker will still be unable to learn the Key. The attacker will have access to neither b or a and no way to build g^(a*b) mod q which is the key. Trying to replay messages or change the order of the messages might invalidate the Diffie Hellman key but will not give the attacker any access to the system. The strength of the AES-128 encryption used once a key is agreed upon prevents an attacker from modifying or learning anything from the message. 
+This signed Diffie Hellman exhange protects from reorder, replay and modification attacks. If an attacker intercepts either of the starting messages that sets up the Diffie Hellman key the attacker will still be unable to learn the Key. The attacker will have access to neither b or a and no way to build `g^(a*b) mod q` which is the key. Trying to replay messages will not give the attacker access to the key because, again, they will not have access to `g^(a*b) mod q`. Changing the order will result in the same. The strength of the AES-128 encryption used once a key is agreed upon prevents an attacker from modifying or learning anything from the message. 
 
 ### T6 - File Leakage
 
