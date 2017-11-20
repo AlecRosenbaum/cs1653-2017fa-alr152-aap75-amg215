@@ -92,21 +92,29 @@ This signed Diffie Hellman exchange protects from reorder, replay and modificati
 
 #### Description
 
-This threat states that file servers cannot be trusted. Files stored on file servers will be able to be attained by malicious attackers. This means that the data on the file servers is not safe from attackers as, if left unprotected, the files can be read by the attacker.
+This threat states that file servers cannot be trusted. Files stored on file servers will be able to be attained by malicious attackers. This means that the data on the file servers is not safe from attackers as, if left unprotected, the files can be read by the attacker. The file servers in general can not be trusted.
 
 #### Protection
 
-Each file server (**S**) will create it's own AES-128 key. It will use this key to encrypt any files sent to it for storage. The encrypted files will then be stored on disk with the file names being the SHA-256 hash of the actual filename. If, later on, a user (**U**) requests these files with an approved token it will then decrypt the file and send it to the user. The following is a diagram of that exchange with DHK being the Diffie Hellman key explained in T5, and K being the File server's storage key.
+The file servers can not be trusted with unencrypted data. On top of this the files must be protected even after group membership changes. To deal with this the group server will create an RSA public-private key pair for each group during group creation. When a file is uploaded the client will provide the groupserver with the group the file is being uploaded to. The group server will then create metadata that will be stored with the file along with the file itself. This metadata will consist of the key the client will use to encrypt the file encrypted with the group server's public key for that group. The group server will also provide the client with the key meant for file encryption though this will NOT be store with the file. The client will use this key to encrypt the file and then will send the encrypted file along with the metadata to the file server. On download the file server will provide the client with the encrypted file and the metadata. The client will then send the group server the metadata along with its own authentication information and group membership. If the user is still part of the specified group the group server will decrypt the metadata with its private key for the group and send back the decrypted metadata which is the key for the encrypted file. The client can now use this key to decrypt the file. The following is the protocol we intend to use for download and upload. **GS** denotes the group server. **FS** denotes the file server. **C** denotes the client. GK+ denotes the group server's public key. K denotes the file's AES-128 key.
 
-* **U** -> **S** `<{<file>}DHK>`
-* **S** saves `{<file>}K` to disk using the filename `H(filename)`
-* **U** -> **S** `<download request for file>`
-* **S** s finds the file with the name `H(filename)` and decrypts with K.
-* **S** -> **U** `<{<file>}DHK>`
+**UPLOAD PROTOCOL**
+* **C** -> **GS** `<request to oupload || group>`
+* **GS** checks to see if user is allowed to upload to the group.
+* **GS** -> **C** `<{K}GK+ || K>`
+* **C** -> **FS** `<{file}K || {K}GK+>`
+
+**DOWNLOAD PROTOCOL**
+* **C** -> **FS** `<request to download file>`
+* **FS** -> **C** `<{file}K || {K}GK+>`
+* **C** -> **GS** `<{K}GK+||group>`
+* **GS** checks to see if user is allowed to download from the group.
+* **GS** -> **C** `<K>`
+* **C** decrypts file with K
 
 #### Argument
 
-This protection protects attackers from reading files from an unsafe file server as the attackers do not have access to the AES-128 key. Attackers will also not be able to learn the names of the files stored on the machine as the SHA-256 hash of the actual filename. SHA-256 has preimage resistance so this will be impossible to reverse. The only thing attackers would be able to gain access to is the encrypted file. This also continues to work after group memberships change. If a user loses a group membership needed to view a file he/she will be unable to provide the token that they need to provide to the file server to gain access to a file.
+This protects files from unsafe file servers. It makes the group server the source of trust of the entire system. The file servers only ever access encrypted files and keys encrypted with the groups public key. The group server maintains the true secret for each group which is each groups private key. In the case of someone being removed from a group they will still have any files they possesed during the time they were part of the group but they will be unable to access any new files. In order to do so they would need the group server to decrypt the file encryption key for them. If they have lost the group membership the group server will not decrypt the key. Any files uploaded in the future are safe and file servers never gain access to the files.
 
 ### T7 - Token Theft
 
