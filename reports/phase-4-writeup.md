@@ -58,17 +58,23 @@ Within the context of this document, the term "fingerprint" shall refer to the S
 
 #### Description
 
-When a client communicates with a file or group server this threat states that messages sent between the user (**U**) and the server (**S**) can be reordered, saved for a replay attack, or modified by a malicious attacker. The following example shows how a malicious attacker (**A**) could intercept a message and reuse it to gain access to an unprotected server.
+When a client communicates with a file or group server this threat states that messages sent between the user (**U**) and the server (**S**) can be reordered, saved for a replay attack, or modified by a malicious attacker. The following examples show how a malicious attacker (**A**) could intercept a message and reuse it to gain access to an unprotected server.
 
-* The attacker intercepts a username and password meant for a server.
+* The attacker intercepts a username and password meant for a server and replays it to gain access to protected data.
 * **U** -> **A**: `<username, password>` 
 * **A** -> **S**: `<username, password>`
 * **S** -> **A**: `<authenticated token>`
 * Once an attacker has an authenticated token it can use it to make attacks on the server.
 
+* The attacker intercepts a message and modifies it to change the original intended message.
+* **U** -> **A**: `<username, password, delete file B>` 
+* **A** -> **S**: `<username, password, delete file A>`
+* Even if the attacker is able to just change parts of the message it can make unintended changes like the deletion of the wrong file.
+
+
 #### Protection
 
-Threat 4 from phase three was dealt with using a Diffie Hellman exchange. This exchange is signed in the case of a file server. To protect against this threat we will use a signed Diffie Hellman exhange for all communication between a Server and a Client. The following is how this exchange works.
+Threat 4 from phase three was dealt with using a Diffie Hellman exchange. This exchange is signed in the case of a file server. To protect against this threat we will use a signed Diffie Hellman exhange for all communication between a both file and group servers and a Client. The following is how this exchange works.
 
 * Bob picks random value a.
 * **B** -> **S**: `(g^a) mod q`
@@ -80,7 +86,7 @@ Threat 4 from phase three was dealt with using a Diffie Hellman exchange. This e
 
 #### Argument
 
-This signed Diffie Hellman exhange protects from reorder, replay and modification attacks. An attacker intercepts either of the starting messages that setup the key the attacker will still be unable to learn the Key for the attacker will not have access to either b or a and no way to build g^(a*b) mod q. An attacker is also unable to reply to the inital message from Bob because attackers will be unable to sign the message. The attacker has no way to get access to the key and no way to trick the user or server into giving it any sensitive information.
+This signed Diffie Hellman exhange protects from reorder, replay and modification attacks. If an attacker intercepts either of the starting messages that sets up the Diffie Hellman key the attacker will still be unable to learn the Key. The attacker will have access to neither b or a and no way to build g^(a*b) mod q which is the key. Trying to replay messages or change the order of the messages might invalidate the Diffie Hellman key but will not give the attacker any access to the system. The strength of the AES-128 encryption used once a key is agreed upon prevents an attacker from modifying or learning anything from the message. 
 
 ### T6 - File Leakage
 
@@ -100,7 +106,7 @@ Each file server (**S**) will create it's own AES-128 key. It will use this key 
 
 #### Argument
 
-This protection protects attackers from reading files from an unsafe file server as the attackers do not have access to the AES-128 key. Attackers will also not be able to learn the names of the files stored on the machine as the AES-128 hash of the actual filename is impossible to reverse. The only thing attackers would be able to gain access to is the encrypted file. This also continues to work after group memberships change. If a user loses a group membership needed to view a file he/she will be unable to provide the token that they need to provide to the file server to gain access to a file.
+This protection protects attackers from reading files from an unsafe file server as the attackers do not have access to the AES-128 key. Attackers will also not be able to learn the names of the files stored on the machine as the AES-128 hash of the actual filename. AES-128 has preimage resistance so this will be impossible to reverse. The only thing attackers would be able to gain access to is the encrypted file. This also continues to work after group memberships change. If a user loses a group membership needed to view a file he/she will be unable to provide the token that they need to provide to the file server to gain access to a file.
 
 ### T7 - Token Theft
 
