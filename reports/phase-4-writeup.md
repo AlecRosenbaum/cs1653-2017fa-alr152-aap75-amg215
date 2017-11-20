@@ -93,7 +93,7 @@ To protect against this threat model, each token should be valid only for one fi
 
 Additionally, token serialization will be modified as follows:
 
-token -> `<issuer>,<username>,<fileserver_publickey>;<group_1>,<group_2>,...,<group_n>`
+token -> `<issuer>,<username>,<fileserver_fingerprint>;<group_1>,<group_2>,...,<group_n>`
 
 In the case of issuer **GroupServer**, file server **FileServer** and user **Bob** with access to groups `bobs_group`, `alices_group`, and `fun_group`, **Bob's** token would be serialized into the following string:
 `GroupServer,Bob,<FileServer's fingerprint>;alices_group,bobs_group,fun_group` 
@@ -108,5 +108,24 @@ Then, when requests are made to file servers, the file server shall verify that 
 
 With the implementation of the above protocol, malicious file servers are still able to steal tokens from users. However, these tokens will not be valid on any other file server. If a token is stolen by a malicious file server and provided to a malicious client for use with another file server, that file server will reject the token and terminate the connection with said client.
 
+## T1-T4
+
+### T1
+
+The mechanism preventing unauthorized token issuance is still in place. A password is required to retrieve a token for each user. This has not changed from phase 3.
+
+### T2
+
+The mechanism preventing token modification and forgery is largely unchanged. The primary change with respect to token signing is that tokens are only usable on a single file server. So, that file server's fingerprint is now included in the serialized token, which is then hashed and signed the same way as before. This inclusion does not invalidate the previous method for verification.
+
+### T3
+
+Nothing addressing the above threats changes our solution T3. T3 primarily involved exchanging a file server's public key, then prompting a user if they trust it. Clients then only connect to trusted file servers. The file server's key is exchanged and validated the same way as during phase 3.
+
+### T4
+
+Again, the way we addressed Passive Monitoring will not change for phase 4. We will still be performing a partially-signed Diffie-Hellman exchange before every communication. This prevents passive monitoring, because all messages are encrypted with a session-specific secret key.
+
 ## Conclusion
 
+The methods of protection outlined above add to the protocols defined for protection against T1-T4, and add additional protection against active attackers and compromised file servers.
