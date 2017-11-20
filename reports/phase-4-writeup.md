@@ -74,7 +74,7 @@ When a client communicates with a file or group server this threat states that m
 
 #### Protection
 
-Threat 4 from phase three was dealt with using a Diffie Hellman exchange. This exchange is signed in the case of a file server. To protect against this threat we will use a signed Diffie Hellman exhange for all communication between a both file and group servers and a Client. The following is how this exchange works.
+Threat 4 from phase three was dealt with using a Diffie Hellman exchange. This exchange is signed in the case of a file server. To protect against this threat we will use a signed Diffie Hellman exchange for all communication between a both file and group servers and a Client. The following is how this exchange works.
 
 * Bob picks random value a.
 * **B** -> **S**: `(g^a) mod q`
@@ -86,7 +86,7 @@ Threat 4 from phase three was dealt with using a Diffie Hellman exchange. This e
 
 #### Argument
 
-This signed Diffie Hellman exhange protects from reorder, replay and modification attacks. If an attacker intercepts either of the starting messages that sets up the Diffie Hellman key the attacker will still be unable to learn the Key. The attacker will have access to neither b or a and no way to build `g^(a*b) mod q` which is the key. Trying to replay messages will not give the attacker access to the key because, again, they will not have access to `g^(a*b) mod q`. Changing the order will result in the same. The strength of the AES-128 encryption used once a key is agreed upon prevents an attacker from modifying or learning anything from the message. 
+This signed Diffie Hellman exchange protects from reorder, replay and modification attacks. If an attacker intercepts either of the starting messages that sets up the Diffie Hellman key the attacker will still be unable to learn the Key. The attacker will have access to neither b or a and no way to build `g^(a*b) mod q` which is the key. Trying to replay messages will not give the attacker access to the key because, again, they will not have access to `g^(a*b) mod q`. Changing the order will result in the same. The strength of the AES-128 encryption used once a key is agreed upon prevents an attacker from modifying or learning anything from the message. 
 
 ### T6 - File Leakage
 
@@ -96,7 +96,7 @@ This threat states that file servers cannot be trusted. Files stored on file ser
 
 #### Protection
 
-Each file server (**S**) will create it's own AES-128 key. It will use this key to encrypt any files sent to it for storage. The encrypted files will then be stored on disk with the file names being the SHA-256 hash of the actual filename. If, later on, a user (**U**) requests these files with an approved token it will then decrypt the file and send it to the user. The following is a diagram of that exhcange with DHK being the Diffie Hellman key explained in T5, and K being the File server's storage key.
+Each file server (**S**) will create it's own AES-128 key. It will use this key to encrypt any files sent to it for storage. The encrypted files will then be stored on disk with the file names being the SHA-256 hash of the actual filename. If, later on, a user (**U**) requests these files with an approved token it will then decrypt the file and send it to the user. The following is a diagram of that exchange with DHK being the Diffie Hellman key explained in T5, and K being the File server's storage key.
 
 * **U** -> **S** `<{<file>}DHK>`
 * **S** saves `{<file>}K` to disk using the filename `H(filename)`
