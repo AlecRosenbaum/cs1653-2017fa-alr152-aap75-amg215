@@ -106,7 +106,7 @@ Each file server (**S**) will create it's own AES-128 key. It will use this key 
 
 #### Argument
 
-This protection protects attackers from reading files from an unsafe file server as the attackers do not have access to the AES-128 key. Attackers will also not be able to learn the names of the files stored on the machine as the AES-128 hash of the actual filename. AES-128 has preimage resistance so this will be impossible to reverse. The only thing attackers would be able to gain access to is the encrypted file. This also continues to work after group memberships change. If a user loses a group membership needed to view a file he/she will be unable to provide the token that they need to provide to the file server to gain access to a file.
+This protection protects attackers from reading files from an unsafe file server as the attackers do not have access to the AES-128 key. Attackers will also not be able to learn the names of the files stored on the machine as the SHA-256 hash of the actual filename. SHA-256 has preimage resistance so this will be impossible to reverse. The only thing attackers would be able to gain access to is the encrypted file. This also continues to work after group memberships change. If a user loses a group membership needed to view a file he/she will be unable to provide the token that they need to provide to the file server to gain access to a file.
 
 ### T7 - Token Theft
 
