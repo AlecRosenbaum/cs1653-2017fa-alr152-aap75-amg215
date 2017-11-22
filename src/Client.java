@@ -16,6 +16,7 @@ public abstract class Client {
     protected ObjectOutputStream output;
     protected ObjectInputStream input;
     protected SecretKey DH_Key;
+    protected int n;
 
     public boolean connect(final String server, final int port, PublicKey serverPublicKey) {
 
@@ -77,6 +78,7 @@ public abstract class Client {
             // System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
 
             // success!
+            this.n = 0;
             return true;
         } catch (Exception e) {
             // oh no....
@@ -114,9 +116,10 @@ public abstract class Client {
      *
      * @return     true if successful, false otherwise
      */
-    public boolean writeObjectToOutput(Serializable obj) {
+    public boolean writeObjectToOutput(Envelope obj) {
         if (isConnected()) {
             try {
+                obj.setN(++this.n);
                 output.writeObject(EncryptionUtils.encrypt(DH_Key, obj));
                 return true;
             } catch (Exception e) {
@@ -135,7 +138,13 @@ public abstract class Client {
     public Object readObjectFromInput() {
         if (isConnected()) {
             try {
-                return EncryptionUtils.decrypt(DH_Key, (byte[]) input.readObject());
+                Envelope env = (Envelope) EncryptionUtils.decrypt(DH_Key, (byte[]) input.readObject());
+                if (env.getN() < this.n) {
+                    System.err.println(env.getN() + " " + this.n);
+                    this.disconnect();
+                }
+                this.n = env.getN() + 1;
+                return env;
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());
                 e.printStackTrace(System.err);

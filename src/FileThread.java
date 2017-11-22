@@ -18,6 +18,7 @@ public class FileThread extends Thread {
 	private ObjectInputStream input;
 	private ObjectOutputStream output;
 	private SecretKey DH_Key;
+	private int n;
 
 	public FileThread(Socket _socket, FileServer _fs) {
 		socket = _socket;
@@ -95,6 +96,15 @@ public class FileThread extends Thread {
 			do {
 				Envelope e = (Envelope) readObjectFromInput();
 				System.out.println("Request received: " + e.getMessage());
+
+				// validate sequence
+				if (e.getN() <= this.n) {
+					System.err.println(e.getN() + " " + this.n);
+					proceed = false;
+					continue;
+				} else {
+					this.n = e.getN() + 1;
+				}
 
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals("LFILES")) {
@@ -352,8 +362,9 @@ public class FileThread extends Thread {
 	 *
 	 * @return     true if successful, false otherwise
 	 */
-	public boolean writeObjectToOutput(Serializable obj) {
+	public boolean writeObjectToOutput(Envelope obj) {
 		try {
+			obj.setN(this.n++);
 			this.output.writeObject(EncryptionUtils.encrypt(DH_Key, obj));
 			return true;
 		} catch (Exception e) {

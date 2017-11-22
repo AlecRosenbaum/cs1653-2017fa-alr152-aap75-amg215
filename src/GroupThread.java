@@ -19,6 +19,7 @@ public class GroupThread extends Thread {
 	private ObjectOutputStream output;
 	private GroupServer my_gs;
 	private SecretKey DH_Key;
+	private int n;
 
 	public GroupThread(Socket _socket, GroupServer _gs) {
 		socket = _socket;
@@ -75,10 +76,20 @@ public class GroupThread extends Thread {
 			this.DH_Key = bobKeyAgreement.generateSecret("AES");
 			// System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
 
+			this.n = 0;
 			do {
 				Envelope message = (Envelope) EncryptionUtils.decrypt(DH_Key, (byte[]) input.readObject());
 				System.out.println("Request received: " + message.getMessage());
 				Envelope response;
+
+				// validate sequence
+				if (message.getN() < this.n) {
+					System.err.println(message.getN() + " " + this.n);
+					proceed = false;
+					continue;
+				} else {
+					this.n = message.getN() + 1;
+				}
 
 				try {
 
@@ -539,8 +550,9 @@ public class GroupThread extends Thread {
 	 *
 	 * @return     true if successful, false otherwise
 	 */
-	public boolean writeObjectToOutput(Serializable obj) {
+	public boolean writeObjectToOutput(Envelope obj) {
 		try {
+			obj.setN(this.n++);
 			this.output.writeObject(EncryptionUtils.encrypt(DH_Key, obj));
 			return true;
 		} catch (Exception e) {
