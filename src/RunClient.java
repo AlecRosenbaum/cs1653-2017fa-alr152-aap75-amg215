@@ -28,9 +28,6 @@ public class RunClient {
         if(fileServerPublicKey == null) {
             fileServerPublicKey = new_file_client.initialConnect(url, port);
             try {
-                // MessageDigest digest = MessageDigest.getInstance("SHA-256", "BC"); 
-                // digest.reset();
-                // digest.update(fileServerPublicKey.getEncoded());
                 System.out.print("Server Provided Public Key Fingerprint For Authentication:\n\n\t" + prettify(EncryptionUtils.hash(fileServerPublicKey.getEncoded())) + "\n\n" +
                 "Entery 'Y' to accept or 'N' to reject: ");
             } catch (Exception e)
