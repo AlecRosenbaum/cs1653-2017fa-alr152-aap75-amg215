@@ -94,8 +94,10 @@ public abstract class Client {
             System.arraycopy(enc, 0, base_integ, base.length, integ.length);
             byte[] base_integ_hash = EncryptionUtils.hash(base_enc);
 
-            this.DH_Key_Encryption = new SecretKeySpec(base_enc_hash, 0, base_enc_hash.length, "AES");
-            this.DH_Key_Integrity = new SecretKeySpec(base_integ_hash, 0, base_integ_hash.length, "AES");
+            // base_enc_hash.length
+            // base_integ_hash.length
+            this.DH_Key_Encryption = new SecretKeySpec(base_enc_hash, 0, 16, "AES");
+            this.DH_Key_Integrity = new SecretKeySpec(base_integ_hash, 0, 16, "AES");
 
             // success!
             this.n = 0;
