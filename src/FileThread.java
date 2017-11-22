@@ -10,6 +10,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 
 public class FileThread extends Thread {
@@ -17,7 +18,8 @@ public class FileThread extends Thread {
 	private final FileServer my_fs;
 	private ObjectInputStream input;
 	private ObjectOutputStream output;
-	private SecretKey DH_Key;
+	// private SecretKey DH_Key;
+	private SecretKey DH_Key_Encryption, DH_Key_Integrity;
 	private int n;
 
 	public FileThread(Socket _socket, FileServer _fs) {
@@ -58,10 +60,8 @@ public class FileThread extends Thread {
 			byte[] DHinfo = null;
 			try {
 				DHinfo = (byte[]) inputMessage;
-			}
-			catch (Exception e)
-			{				
-				if("key request".equals((String)inputMessage)) {
+			} catch (Exception e) {
+				if ("key request".equals((String)inputMessage)) {
 					output.writeObject(my_fs.getPublicKey());
 					System.out.println("Providing Public Key for Initial Authentication.");
 					return;
@@ -82,7 +82,7 @@ public class FileThread extends Thread {
 
 			Signature privateSignature = Signature.getInstance("SHA256withRSA", "BC");
 			privateSignature.initSign(my_fs.getPrivateKey());
-			privateSignature.update(bobsKeys.getPublic().getEncoded());		
+			privateSignature.update(bobsKeys.getPublic().getEncoded());
 			byte[] signature = privateSignature.sign();
 
 			// Send Bob's DH Parameters to Alice
@@ -90,21 +90,33 @@ public class FileThread extends Thread {
 			output.writeObject(signature);
 
 			// Generate AES Secret Keys
-			this.DH_Key = bobKeyAgreement.generateSecret("AES");
+			SecretKey DH_Key = bobKeyAgreement.generateSecret("AES");
 			// System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
+			//
+			byte[] base = DH_Key.getEncoded();
+			byte[] enc = "E".getBytes();
+			byte[] integ = "I".getBytes();
+
+			byte[] base_enc = new byte[base.length + enc.length];
+			System.arraycopy(base, 0, base_enc, 0, base.length);
+			System.arraycopy(enc, 0, base_enc, base.length, enc.length);
+			byte[] base_enc_hash = EncryptionUtils.hash(base_enc);
+
+			byte[] base_integ = new byte[base.length + integ.length];
+			System.arraycopy(base, 0, base_integ, 0, base.length);
+			System.arraycopy(enc, 0, base_integ, base.length, integ.length);
+			byte[] base_integ_hash = EncryptionUtils.hash(base_enc);
+
+			this.DH_Key_Encryption = new SecretKeySpec(base_enc_hash, 0, base_enc_hash.length, "AES");
+			this.DH_Key_Integrity = new SecretKeySpec(base_integ_hash, 0, base_integ_hash.length, "AES");
 
 			do {
 				Envelope e = (Envelope) readObjectFromInput();
-				System.out.println("Request received: " + e.getMessage());
-
-				// validate sequence
-				if (e.getN() <= this.n) {
-					System.err.println(e.getN() + " " + this.n);
+				if (e == null) {
 					proceed = false;
 					continue;
-				} else {
-					this.n = e.getN() + 1;
 				}
+				System.out.println("Request received: " + e.getMessage());
 
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals("LFILES")) {
@@ -342,11 +354,29 @@ public class FileThread extends Thread {
 	/**
 	 * Reads an object from input. Will handle all encryption.
 	 *
-	 * @return     object from input, null if errored
+	 * @return     envelope from input, null if errored
 	 */
-	public Object readObjectFromInput() {
+	public Envelope readObjectFromInput() {
 		try {
-			return EncryptionUtils.decrypt(DH_Key, (byte[]) input.readObject());
+
+			Envelope env = (Envelope) EncryptionUtils.decrypt(this.DH_Key_Encryption, (byte[]) input.readObject());
+
+			// validate sequence
+			if (env.getN() <= this.n) {
+				System.err.println(env.getN() + " " + this.n);
+				return null;
+			} else {
+				this.n = env.getN() + 1;
+			}
+
+			// validate hmac
+			if (!Arrays.equals(env.getHMAC(), env.calcHMAC(this.DH_Key_Integrity))) {
+				System.err.print(env.getHMAC());
+				System.err.print(" ");
+				System.err.println(env.calcHMAC(this.DH_Key_Integrity));
+				return null;
+			}
+			return env;
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
@@ -365,7 +395,8 @@ public class FileThread extends Thread {
 	public boolean writeObjectToOutput(Envelope obj) {
 		try {
 			obj.setN(this.n++);
-			this.output.writeObject(EncryptionUtils.encrypt(DH_Key, obj));
+			obj.setHMAC(obj.calcHMAC(this.DH_Key_Integrity));
+			this.output.writeObject(EncryptionUtils.encrypt(this.DH_Key_Encryption, obj));
 			return true;
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());

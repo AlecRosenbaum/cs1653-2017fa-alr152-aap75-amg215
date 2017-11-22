@@ -12,7 +12,7 @@ public abstract class EncryptionUtils {
 	public static byte[] encrypt(SecretKey key, Serializable obj) {
 		try {
 			final Cipher c = Cipher.getInstance("AES", "BC");
-            c.init(Cipher.ENCRYPT_MODE, key);
+			c.init(Cipher.ENCRYPT_MODE, key);
 			return c.doFinal(serialize(obj));
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
@@ -23,7 +23,7 @@ public abstract class EncryptionUtils {
 	public static Object decrypt(SecretKey key, byte[] cypherText) {
 		try {
 			final Cipher c = Cipher.getInstance("AES", "BC");
-            c.init(Cipher.DECRYPT_MODE, key);
+			c.init(Cipher.DECRYPT_MODE, key);
 			return deserialize(c.doFinal(cypherText));
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
@@ -35,7 +35,7 @@ public abstract class EncryptionUtils {
 		ByteArrayOutputStream b = new ByteArrayOutputStream();
 		ObjectOutputStream o = new ObjectOutputStream(b);
 		o.writeObject(obj);
-		return b.toByteArray();		
+		return b.toByteArray();
 	}
 
 	public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
@@ -150,8 +150,19 @@ public abstract class EncryptionUtils {
 
 	public static String generateRandomString(int length) {
 		// this will work up to 32 characters
-        String uuid = UUID.randomUUID().toString().replace("-", "");
-        return uuid.substring(0, length);
-    }
+		String uuid = UUID.randomUUID().toString().replace("-", "");
+		return uuid.substring(0, length);
+	}
+
+	public static byte[] calcHMAC(SecretKey key, Serializable obj) throws Exception {
+		Mac sha256_HMAC = Mac.getInstance("HmacSHA256", "BC");
+		sha256_HMAC.init(key);
+		return sha256_HMAC.doFinal(serialize(obj));
+	}
+
+	public static byte[] hash(byte[] data) throws NoSuchProviderException, NoSuchAlgorithmException {
+		MessageDigest digest = MessageDigest.getInstance("SHA-256", "BC");
+		return digest.digest(data);
+	}
 
 }
