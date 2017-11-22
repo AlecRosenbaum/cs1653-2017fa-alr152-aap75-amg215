@@ -237,4 +237,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
+	public boolean uploadFile(UserToken token, String group) {
+		
+	}
+
 }

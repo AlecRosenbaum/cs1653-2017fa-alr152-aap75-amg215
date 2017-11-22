@@ -254,7 +254,10 @@ public class GroupThread extends Thread {
 						}
 
 						writeObjectToOutput(response);
-					} else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
+					} else if (message.getMessage().equals("UFILE")) {
+						
+					}
+					else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
 						socket.close(); //Close the socket
 						proceed = false; //End this communication loop
 					} else {
