@@ -3,10 +3,6 @@ import java.io.*;
 import java.security.*;
 import javax.crypto.*;
 import java.util.*;
-import javax.crypto.spec.DHParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.spec.*;
-import java.math.BigInteger;
 
 
 public class GroupFileKeys implements java.io.Serializable {
