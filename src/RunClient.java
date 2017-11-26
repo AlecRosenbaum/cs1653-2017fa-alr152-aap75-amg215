@@ -2,6 +2,7 @@
 import java.util.ArrayList;
 import java.io.*;
 import java.security.*;
+import javax.crypto.*;
 import java.util.*;
 import java.lang.*;
 
@@ -182,7 +183,7 @@ public class RunClient {
                                          "\t\tLists file in current file server.\n" +
                                          "\tupload [sourcefile] [destinationfile] [group]\n" +
                                          "\t\tUpload file to file server.\n" +
-                                         "\tdownload [remoteFile] [localFile]\n" +
+                                         "\tdownload [remoteFile] [localFile] [groupName]\n" +
                                          "\t\tDownload file from file server.\n" +
                                          "\tdelete [filename]\n" +
                                          "\t\tDelete file from file server.\n" +
@@ -231,13 +232,29 @@ public class RunClient {
                         localFile = inputArray[1];
                         remoteFile = inputArray[2];
                         groupName = inputArray[3];
-                        file_client.upload(localFile, remoteFile, groupName, mytoken);
-                        System.out.println("Uploaded " + localFile + " to " + remoteFile + ".");
+                        FileKey fk = group_client.uploadFile(mytoken, groupName);
+                        if(fk == null) {
+                            System.out.println("Unauthorized");
+                            break;
+                        }
+                        file_client.upload(localFile, remoteFile, groupName, mytoken, fk);
                         break;
                     case "download":
                         remoteFile = inputArray[1];
-                        localFile = inputArray[1];
-                        file_client.download(remoteFile, localFile, mytoken);
+                        localFile = inputArray[2];
+                        groupName = inputArray[3];
+                        byte [] metadata = file_client.download(remoteFile, localFile, mytoken);
+                        SecretKey s = group_client.downloadFile(mytoken, groupName, metadata);
+                        if(s == null) {
+                            System.out.println("Unauthorized");
+                            break;
+                        }
+                        File local = new File(localFile);
+                        byte[] ciphertext = new byte[(int) local.length()];            
+                        FileInputStream fis = new FileInputStream(local);
+                        fis.read(ciphertext);            
+                        EncryptionUtils.decryptToFile(s, ciphertext, new File(localFile));
+                        fis.close();
                         System.out.println("Downloaded " + remoteFile + " to " + localFile + ".");
                         break;
                     case "delete":
@@ -272,6 +289,7 @@ public class RunClient {
                             System.out.println("Switched to user " + u);
                             mytoken = newToken;
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "changepassword":
                         u = inputArray[1];
@@ -308,6 +326,7 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to create group.");
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "deletegroup":
                         groupName = inputArray[1];
@@ -316,6 +335,7 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to delete group.");
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "addgroupuser":
                         userName = inputArray[1];
@@ -375,7 +395,7 @@ public class RunClient {
 
 
             // upload a file
-            file_client.upload(".gitignore", "test", "ADMIN", mytoken);
+            //file_client.upload(".gitignore", "test", "ADMIN", mytoken);
 
             // list files
             ArrayList<String> files = (ArrayList<String>)file_client.listFiles(mytoken);
@@ -505,6 +525,7 @@ class ApprovedFileServerList implements java.io.Serializable {
         try {
             ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(fileServersPath));
             outStream.writeObject(this);
+            outStream.close();
         } catch(Exception e) {
             System.out.println("Error backing up approved files");
         }

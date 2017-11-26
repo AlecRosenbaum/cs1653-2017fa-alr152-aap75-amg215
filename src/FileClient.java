@@ -49,10 +49,11 @@ public class FileClient extends Client implements FileClientInterface {
 		}			
     }
 
-	public boolean download(String sourceFile, String destFile, UserToken token) {
+	public byte[] download(String sourceFile, String destFile, UserToken token) {
 		if (sourceFile.charAt(0) == '/') {
 			sourceFile = sourceFile.substring(1);
 		}
+		byte [] returnAr = new byte[1];
 
 		File file = new File(destFile);
 		try {
@@ -78,30 +79,31 @@ public class FileClient extends Client implements FileClientInterface {
 
 				if (env.getMessage().compareTo("EOF") == 0) {
 					fos.close();
+					returnAr = (byte[])env.getObjContents().get(0);
 					System.out.printf("\nTransfer successful file %s\n", sourceFile);
 					env = new Envelope("OK"); //Success
 					this.writeObjectToOutput(env);
 				} else {
 					System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
 					file.delete();
-					return false;
+					return returnAr;
 				}
 			}
 
 			else {
 				System.out.printf("Error couldn't create file %s\n", destFile);
-				return false;
+				return returnAr;
 			}
 
 
 		} catch (IOException e1) {
 
 			System.out.printf("Error couldn't create file %s\n", destFile);
-			return false;
+			return returnAr;
 
 
 		}
-		return true;
+		return returnAr;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -129,8 +131,7 @@ public class FileClient extends Client implements FileClientInterface {
 		}
 	}
 
-	public boolean upload(String sourceFile, String destFile, String group,
-	                      UserToken token) {
+	public boolean upload(String sourceFile, String destFile, String group, UserToken token, FileKey fk) {
 
 		if (destFile.charAt(0) != '/') {
 			destFile = "/" + destFile;
@@ -146,8 +147,13 @@ public class FileClient extends Client implements FileClientInterface {
 			message.addObject(token); //Add requester's token
 			this.writeObjectToOutput(message);
 
-
-			FileInputStream fis = new FileInputStream(sourceFile);
+			File file = new File(sourceFile);
+			FileInputStream fis = new FileInputStream(file);
+			byte[] plaintext = new byte[(int) file.length()];
+			fis.read(plaintext);
+			//enrypt file to be sent to fileserver
+			byte[] ciphertext = EncryptionUtils.encrypt(fk.getKey(), plaintext);
+			InputStream inputstream = new ByteArrayInputStream(ciphertext);
 
 			env = (Envelope) this.readObjectFromInput();
 
@@ -169,7 +175,7 @@ public class FileClient extends Client implements FileClientInterface {
 					return false;
 				}
 				message = new Envelope("CHUNK");
-				int n = fis.read(buf); //can throw an IOException
+				int n = inputstream.read(buf);
 				if (n > 0) {
 					System.out.printf(".");
 				} else if (n < 0) {
@@ -192,6 +198,8 @@ public class FileClient extends Client implements FileClientInterface {
 			if (env.getMessage().compareTo("READY") == 0) {
 
 				message = new Envelope("EOF");
+				message.addObject(fk.getEKey());
+				message.addObject(new Integer(fk.getEKey().length));
 				this.writeObjectToOutput(message);
 
 				env = (Envelope) this.readObjectFromInput();

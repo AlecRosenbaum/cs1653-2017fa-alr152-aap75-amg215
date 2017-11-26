@@ -3,6 +3,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.net.Socket;
+import javax.crypto.*;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -235,6 +236,51 @@ public class GroupClient extends Client implements GroupClientInterface {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 			return false;
+		}
+	}
+
+	public FileKey uploadFile(UserToken token, String group) {
+		try {
+			Envelope message = null, response = null;
+			message = new Envelope("UFILE");
+			message.addObject(token); //Add token
+			message.addObject(group); //Add group string
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return (FileKey)response.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
+			}
+			System.out.println("ERROR getting key for group");
+			return null;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return null;
+		}
+	}
+
+	public SecretKey downloadFile(UserToken token, String group, byte[] encryptedKey) {
+		try {
+			Envelope message = null, response = null;
+			message = new Envelope("DFILE");
+			message.addObject(token); //Add token
+			message.addObject(group); //Add group string
+			message.addObject(encryptedKey);
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return (SecretKey)response.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
+			}
+
+			return null;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return null;
 		}
 	}
 
