@@ -24,6 +24,8 @@ All public key cryptography used in addressing these threat models is implemente
 
 All hashing within the context of this application will be done using SHA-256. Current NIST standards indicate that SHA-256 provides sufficient security for Digital signatures and hash-only applications. PBKDF2 will be used for storing user passwords, using SHA-256 as the pseudorandom function. As of January 2017, the Internet Engineering Task Force (IETF) recommends PBKDF2 as a password hashing algorithm [2].
 
+SHA-256 will also be used for HMAC operations. NIST standards indicate that SHA-256 based HMAC's are currently sufficiently. secure 
+
 ### Key Agreement
 
 The key agreement algorithm used to address these threat models will be Diffie Hellman. Diffie Hellman exchanges allow securely exchanging cryptographic keys over a public channel. Security of this exchange is based on discrete logarithms. Current NIST standards indicate that 2048-bit groups with 224-bit keys provide sufficient security for modern applications. This application will utilize the prime and generator values for the 2048-bit MODP Group as specified by RFC3526[3].
@@ -74,19 +76,35 @@ When a client communicates with a file or group server this threat states that m
 
 #### Protection
 
-Threat 4 from phase three was dealt with using a Diffie Hellman exchange. This exchange is signed in the case of a file server. To protect against this threat we will use a signed Diffie Hellman exchange for all communication between a both file and group servers and a Client. The following is how this exchange works.
+Threat 4 from phase three was dealt with using a Diffie Hellman exchange. To mitigate the threats described by this threat model, two features will be added to the messaging protocol.
+
+Firstly, immediately after beginning a session, a number will be sent along with each message. After every message sent, this number will be incremented by one. When messages are received, they will only be valid if the message number is larger than the largest message number previously seen. Note that the number resets at the beginning of each new session.
+
+Secondly, a shared key will be used to calculate an HMAC of each message, that will be sent along with the message. This will will be used by both parties to verify integrity. To implement this feature, a second key is needed. We will derive keys similar to the way SSH does: after the DH exchange creates initial key *K*, two keys will be created as follows:
+
+* Encryption Key (*Ke*): HASH(K || "E")
+* Integrity Key (*Ki*): HASH(K || "I")
+
+An example exchange between Bob (**B**) and Server (**S**), showing both the DH exchange and a following example message.
 
 * Bob picks random value a.
 * **B** -> **S**: `(g^a) mod q`
 * Server picks random value b and signs the message.
 * **S** -> **B**: `[(g^b) mod q]S^(-1)`
-* Bob validates signature and Bob and Server now have a shared key `K= g^(a*b) mod q`
-* **B** -> **S**: `{<message>}K`
-* **S** -> **B**: `{<message>}K`
+* Bob validates the signature and Bob and Server now have a shared key `K= g^(a*b) mod q`
+* Using shared key *K*, Bob and Server compute a shared symmetric Encryption Key `Ke = HASH(K || "E")` and Integrity Key `Ki = HASH(K || "I")`
+* **B** -> **S**: `{n, <message>}Ke, HMAC(Ki, <message> || n)`
+* **S** -> **B**: `{n+1, <message>}Ke, HMAC(Ki, <message> || n+1)`
 
 #### Argument
 
-This signed Diffie Hellman exchange protects from reorder, replay and modification attacks. If an attacker intercepts either of the starting messages that sets up the Diffie Hellman key the attacker will still be unable to learn the Key. The attacker will have access to neither b or a and no way to build `g^(a*b) mod q` which is the key. Trying to replay messages will not give the attacker access to the key because, again, they will not have access to `g^(a*b) mod q`. Changing the order will result in the same. The strength of the AES-128 encryption used once a key is agreed upon prevents an attacker from modifying or learning anything from the message. 
+The attacks the described protocol mitigates are reorder, replay, and modification attacks. Reorder and replay attacks are mitigated by both the session-specific encryption keys, as well as the incrementing, session-specific counter.
+
+Replays between sessions are prevented by using different encryption keys for each session. Within a session, messages are only accepted if the counter has been incremented above the highest seen value, so all replayed messages end up being ignored.
+
+Reorder attacks will also be prevented by using the session-specific counter. An attacker may delay or drop a message, but the messages will only be accepted in ascending counter order.
+
+Modification attacks aren't prevented by using a counter, but are prevented by using an HMAC function to create a secure hash that is sent along with each message. This hash is secured using a separate key,  so even if *Ke* is broken or leaked and used to modify the message, the HMAC will still be valid. This mean that it can still be used to detect the presence unauthorized modifications within the message.
 
 ### T6 - File Leakage
 

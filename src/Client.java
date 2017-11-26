@@ -4,6 +4,7 @@ import java.security.*;
 import javax.crypto.*;
 import java.util.*;
 import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.spec.*;
 import java.math.BigInteger;
 
@@ -16,6 +17,9 @@ public abstract class Client {
     protected ObjectOutputStream output;
     protected ObjectInputStream input;
     protected SecretKey DH_Key;
+    protected SecretKey DH_Key_Encryption;
+    protected SecretKey DH_Key_Integrity;
+    protected int n;
 
     public boolean connect(final String server, final int port, PublicKey serverPublicKey) {
 
@@ -28,7 +32,7 @@ public abstract class Client {
             input = new ObjectInputStream(sock.getInputStream());
 
             // Generate DH specs (2048-bit p, 224 bit key)
-            String p_hex = 
+            String p_hex =
                 "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
                 "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
                 "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
@@ -39,7 +43,7 @@ public abstract class Client {
                 "670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B" +
                 "E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9" +
                 "DE2BCBF6955817183995497CEA956AE515D2261898FA0510" +
-                "15728E5A8AACAA68FFFFFFFFFFFFFFFF";            
+                "15728E5A8AACAA68FFFFFFFFFFFFFFFF";
             BigInteger p = new BigInteger(p_hex, 16);
             BigInteger g = BigInteger.valueOf(2);
             DHParameterSpec paramSpec = new DHParameterSpec(p, g, 224);
@@ -55,13 +59,12 @@ public abstract class Client {
 
             // Recieve Bob's DH Info
             byte[] bobDH = (byte[]) input.readObject();
-            if(serverPublicKey != null) {
+            if (serverPublicKey != null) {
                 byte[] signature = (byte[]) input.readObject();
                 Signature publicSignature = Signature.getInstance("SHA256withRSA", "BC");
                 publicSignature.initVerify(serverPublicKey);
-                publicSignature.update(bobDH);            
-                if(!publicSignature.verify(signature))
-                {
+                publicSignature.update(bobDH);
+                if (!publicSignature.verify(signature)) {
                     System.out.println("Invalid signature, aborting connection.");
                     return false;
                 }
@@ -73,10 +76,29 @@ public abstract class Client {
             aKeyAgreement.doPhase(bobsDHPubKey, true);
 
             // Generate AES Secret Keys
-            this.DH_Key = aKeyAgreement.generateSecret("AES");
-            // System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
+            SecretKey DH_Key = aKeyAgreement.generateSecret("AES");
+            // System.out.println(Base64.getEncoder().encodeToString(DH_Key.getEncoded()));
+
+            // convert base key into encryption and integrity keys
+            byte[] base = DH_Key.getEncoded();
+            byte[] enc = "E".getBytes();
+            byte[] integ = "I".getBytes();
+
+            byte[] base_enc = new byte[base.length + enc.length];
+            System.arraycopy(base, 0, base_enc, 0, base.length);
+            System.arraycopy(enc, 0, base_enc, base.length, enc.length);
+            byte[] base_enc_hash = EncryptionUtils.hash(base_enc);
+
+            byte[] base_integ = new byte[base.length + integ.length];
+            System.arraycopy(base, 0, base_integ, 0, base.length);
+            System.arraycopy(enc, 0, base_integ, base.length, integ.length);
+            byte[] base_integ_hash = EncryptionUtils.hash(base_enc);
+
+            this.DH_Key_Encryption = new SecretKeySpec(base_enc_hash, 0, base_enc_hash.length, "AES");
+            this.DH_Key_Integrity = new SecretKeySpec(base_integ_hash, 0, base_integ_hash.length, "AES");
 
             // success!
+            this.n = 0;
             return true;
         } catch (Exception e) {
             // oh no....
@@ -114,10 +136,12 @@ public abstract class Client {
      *
      * @return     true if successful, false otherwise
      */
-    public boolean writeObjectToOutput(Serializable obj) {
+    public boolean writeObjectToOutput(Envelope obj) {
         if (isConnected()) {
             try {
-                output.writeObject(EncryptionUtils.encrypt(DH_Key, obj));
+                obj.setN(++this.n);
+                obj.setHMAC(obj.calcHMAC(this.DH_Key_Integrity));
+                output.writeObject(EncryptionUtils.encrypt(this.DH_Key_Encryption, obj));
                 return true;
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());
@@ -135,7 +159,23 @@ public abstract class Client {
     public Object readObjectFromInput() {
         if (isConnected()) {
             try {
-                return EncryptionUtils.decrypt(DH_Key, (byte[]) input.readObject());
+                Envelope env = (Envelope) EncryptionUtils.decrypt(this.DH_Key_Encryption, (byte[]) input.readObject());
+
+                // validate n
+                if (env.getN() < this.n) {
+                    System.err.println(env.getN() + " " + this.n);
+                    this.disconnect();
+                }
+                this.n = env.getN() + 1;
+
+                // validate hmac
+                if (!Arrays.equals(env.getHMAC(), env.calcHMAC(this.DH_Key_Integrity))) {
+                    System.err.print(env.getHMAC());
+                    System.err.print(" ");
+                    System.err.println(env.calcHMAC(this.DH_Key_Integrity));
+                    this.disconnect();
+                }
+                return env;
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());
                 e.printStackTrace(System.err);

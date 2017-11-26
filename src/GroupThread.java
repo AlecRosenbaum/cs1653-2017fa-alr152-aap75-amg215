@@ -11,6 +11,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 
 public class GroupThread extends Thread {
@@ -18,7 +19,8 @@ public class GroupThread extends Thread {
 	private ObjectInputStream input;
 	private ObjectOutputStream output;
 	private GroupServer my_gs;
-	private SecretKey DH_Key;
+	private SecretKey DH_Key_Encryption, DH_Key_Integrity;
+	private int n;
 
 	public GroupThread(Socket _socket, GroupServer _gs) {
 		socket = _socket;
@@ -72,13 +74,49 @@ public class GroupThread extends Thread {
 			output.writeObject(bobsKeys.getPublic().getEncoded());
 
 			// Generate AES Secret Keys
-			this.DH_Key = bobKeyAgreement.generateSecret("AES");
+			SecretKey DH_Key = bobKeyAgreement.generateSecret("AES");
 			// System.out.println(Base64.getEncoder().encodeToString(this.DH_Key.getEncoded()));
+			// 
+			byte[] base = DH_Key.getEncoded();
+            byte[] enc = "E".getBytes();
+            byte[] integ = "I".getBytes();
+            
+            byte[] base_enc = new byte[base.length + enc.length];
+            System.arraycopy(base, 0, base_enc, 0, base.length);
+            System.arraycopy(enc, 0, base_enc, base.length, enc.length);
+            byte[] base_enc_hash = EncryptionUtils.hash(base_enc);
 
+            byte[] base_integ = new byte[base.length + integ.length];
+            System.arraycopy(base, 0, base_integ, 0, base.length);
+            System.arraycopy(enc, 0, base_integ, base.length, integ.length);
+            byte[] base_integ_hash = EncryptionUtils.hash(base_enc);
+
+            this.DH_Key_Encryption = new SecretKeySpec(base_enc_hash, 0, base_enc_hash.length, "AES");
+            this.DH_Key_Integrity = new SecretKeySpec(base_integ_hash, 0, base_integ_hash.length, "AES");
+
+			this.n = 0;
 			do {
-				Envelope message = (Envelope) EncryptionUtils.decrypt(DH_Key, (byte[]) input.readObject());
+				Envelope message = (Envelope) EncryptionUtils.decrypt(DH_Key_Encryption, (byte[]) input.readObject());
 				System.out.println("Request received: " + message.getMessage());
 				Envelope response;
+
+				// validate sequence
+				if (message.getN() < this.n) {
+					System.err.println(message.getN() + " " + this.n);
+					proceed = false;
+					continue;
+				} else {
+					this.n = message.getN() + 1;
+				}
+
+				// validate hmac
+				if (!Arrays.equals(message.getHMAC(), message.calcHMAC(this.DH_Key_Integrity))) {
+                    System.err.print(message.getHMAC());
+                    System.err.print(" ");
+                    System.err.println(message.calcHMAC(this.DH_Key_Integrity));
+                    proceed = false;
+					continue;
+                }
 
 				try {
 
@@ -542,9 +580,11 @@ public class GroupThread extends Thread {
 	 *
 	 * @return     true if successful, false otherwise
 	 */
-	public boolean writeObjectToOutput(Serializable obj) {
+	public boolean writeObjectToOutput(Envelope obj) {
 		try {
-			this.output.writeObject(EncryptionUtils.encrypt(DH_Key, obj));
+			obj.setN(this.n++);
+            obj.setHMAC(obj.calcHMAC(this.DH_Key_Integrity));
+			this.output.writeObject(EncryptionUtils.encrypt(this.DH_Key_Encryption, obj));
 			return true;
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
