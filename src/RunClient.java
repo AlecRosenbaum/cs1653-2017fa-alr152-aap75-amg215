@@ -289,6 +289,7 @@ public class RunClient {
                             System.out.println("Switched to user " + u);
                             mytoken = newToken;
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "changepassword":
                         u = inputArray[1];
@@ -299,7 +300,6 @@ public class RunClient {
                         } else {
                             System.out.println("Password change failed.");
                         }
-                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "createuser":
                         userName = inputArray[1];
@@ -310,7 +310,6 @@ public class RunClient {
                         } else {
                             System.out.println("User creation failed.");
                         }
-                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "deleteuser":
                         userName = inputArray[1];
@@ -319,7 +318,6 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to delete user");
                         }
-                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "creategroup":
                         groupName = inputArray[1];
