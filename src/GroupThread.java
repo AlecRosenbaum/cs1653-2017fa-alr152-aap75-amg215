@@ -91,8 +91,8 @@ public class GroupThread extends Thread {
             System.arraycopy(enc, 0, base_integ, base.length, integ.length);
             byte[] base_integ_hash = EncryptionUtils.hash(base_enc);
 
-            this.DH_Key_Encryption = new SecretKeySpec(base_enc_hash, 0, base_enc_hash.length, "AES");
-            this.DH_Key_Integrity = new SecretKeySpec(base_integ_hash, 0, base_integ_hash.length, "AES");
+            this.DH_Key_Encryption = new SecretKeySpec(base_enc_hash, 0, 16, "AES");
+            this.DH_Key_Integrity = new SecretKeySpec(base_integ_hash, 0, 16, "AES");
 
 			this.n = 0;
 			do {
@@ -121,14 +121,15 @@ public class GroupThread extends Thread {
 				try {
 
 					if (message.getMessage().equals("GET")) { //Client wants a token
-						String username = (String)message.getObjContents().get(0); //Get the username
-						String password = (String)message.getObjContents().get(1); //Get the password
+						String username = (String) message.getObjContents().get(0); //Get the username
+						String password = (String) message.getObjContents().get(1); //Get the password
+						byte[] fingerprint = (byte[]) message.getObjContents().get(2); //Get the fingerprint
 						if (username == null || my_gs.userList.lockedOut(username) || !my_gs.userList.validate(username, password)) {
 							response = new Envelope("FAIL");
 							response.addObject(null);
 							writeObjectToOutput(response);
 						} else {
-							UserToken yourToken = createToken(username); //Create a token
+							UserToken yourToken = createToken(username, fingerprint); //Create a token
 
 							//Respond to the client. On error, the client will receive a null token
 							response = new Envelope("OK");
@@ -343,11 +344,11 @@ public class GroupThread extends Thread {
 	}
 
 	//Method to create tokens
-	private UserToken createToken(String username) {
+	private UserToken createToken(String username, byte[] fingerprint) {
 		//Check that user exists
 		if (my_gs.userList.checkUser(username)) {
 			//Issue a new token with server's name, user's name, and user's groups
-			Token yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username));
+			Token yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), fingerprint);
 
 			// Sign token
 			try {
@@ -428,26 +429,11 @@ public class GroupThread extends Thread {
 
 					if (!requester.equals(username)) {
 
-						//The user needs to be deletd from all groups they belong to
-						ArrayList<String> deleteFromGroups = new ArrayList<String>();
-
-						//This will produce a hard copy of the list of groups this user belongs
-						for (int index = 0; index < my_gs.userList.getUserGroups(username).size(); index++) {
-							deleteFromGroups.add(my_gs.userList.getUserGroups(username).get(index));
-						}
-
-						//If groups are owned, they must be deleted
-						ArrayList<String> deleteOwnedGroup = new ArrayList<String>();
-
-						//Make a hard copy of the user's ownership list
-						for (int index = 0; index < my_gs.userList.getUserOwnership(username).size(); index++) {
-							deleteOwnedGroup.add(my_gs.userList.getUserOwnership(username).get(index));
-						}
-
-						//Delete owned groups
-						for (int index = 0; index < deleteOwnedGroup.size(); index++) {
-							//Use the delete group method. Token must be created for this action
-							deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup));
+						// delete groups owned by that user
+						for (String group : my_gs.userList.getUserOwnership(username)) {
+							my_gs.userList.removeOwnership(username, group);
+							my_gs.userList.removeGroupMembers(group);
+							my_gs.groups.remove(group);
 						}
 
 						//Delete the user from the user list

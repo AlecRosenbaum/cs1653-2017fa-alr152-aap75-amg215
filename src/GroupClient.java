@@ -8,7 +8,7 @@ import java.io.ObjectOutputStream;
 
 public class GroupClient extends Client implements GroupClientInterface {
 
-	public UserToken getToken(String username, String password) {
+	public UserToken getToken(String username, String password, byte[] fingerprint) {
 		try {
 			UserToken token = null;
 			Envelope message = null, response = null;
@@ -17,6 +17,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
 			message.addObject(password); //Add password string
+			message.addObject(fingerprint); //Add fileserver fingerprint
 			this.writeObjectToOutput(message);
 
 			//Get the response from the server

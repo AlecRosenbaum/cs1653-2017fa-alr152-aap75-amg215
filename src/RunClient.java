@@ -28,10 +28,7 @@ public class RunClient {
         if(fileServerPublicKey == null) {
             fileServerPublicKey = new_file_client.initialConnect(url, port);
             try {
-                MessageDigest digest = MessageDigest.getInstance("SHA-256", "BC"); 
-                digest.reset();
-                digest.update(fileServerPublicKey.getEncoded());
-                System.out.print("Server Provided Public Key Fingerprint For Authentication:\n\n\t" + prettify(digest.digest()) + "\n\n" +
+                System.out.print("Server Provided Public Key Fingerprint For Authentication:\n\n\t" + prettify(EncryptionUtils.hash(fileServerPublicKey.getEncoded())) + "\n\n" +
                 "Entery 'Y' to accept or 'N' to reject: ");
             } catch (Exception e)
             {
@@ -145,7 +142,7 @@ public class RunClient {
         String u = console.nextLine();
         System.out.print("Enter password: ");
         String p = console.nextLine();
-        UserToken mytoken = group_client.getToken(u, p);
+        UserToken mytoken = group_client.getToken(u, p, EncryptionUtils.hash(fileServerPublicKey.getEncoded()));
         if (mytoken == null) {
             System.out.println("Login Unsuccessful");
             return;
@@ -268,7 +265,7 @@ public class RunClient {
                     case "changeuser":
                         u = inputArray[1];
                         p = inputArray[2];
-                        UserToken newToken = group_client.getToken(u, p);
+                        UserToken newToken = group_client.getToken(u, p,  EncryptionUtils.hash(fileServerPublicKey.getEncoded()));
                         if (newToken == null) {
                             System.out.println("User change failed.");
                         } else {
@@ -328,7 +325,7 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to add user to group");
                         }
-                        mytoken = group_client.getToken(mytoken.getSubject(), p); //refresh token
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "deletegroupuser":
                         userName = inputArray[1];
@@ -338,7 +335,7 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to delete user from group");
                         }
-                        mytoken = group_client.getToken(mytoken.getSubject(), p); //refresh token
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "listmembers":
                         groupName = inputArray[1];
@@ -369,7 +366,7 @@ public class RunClient {
         else {
             // get a token
             System.out.println("Running Tests");
-            mytoken = group_client.getToken("aadu" ,"admin");
+            mytoken = group_client.getToken("aadu" ,"admin", EncryptionUtils.hash(fileServerPublicKey.getEncoded()));
             if (mytoken == null) {
                 System.out.println("Token creation unsucessful.");
             } else {
