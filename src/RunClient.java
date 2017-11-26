@@ -2,6 +2,7 @@
 import java.util.ArrayList;
 import java.io.*;
 import java.security.*;
+import javax.crypto.*;
 import java.util.*;
 import java.lang.*;
 
@@ -182,7 +183,7 @@ public class RunClient {
                                          "\t\tLists file in current file server.\n" +
                                          "\tupload [sourcefile] [destinationfile] [group]\n" +
                                          "\t\tUpload file to file server.\n" +
-                                         "\tdownload [remoteFile] [localFile]\n" +
+                                         "\tdownload [remoteFile] [localFile] [groupName]\n" +
                                          "\t\tDownload file from file server.\n" +
                                          "\tdelete [filename]\n" +
                                          "\t\tDelete file from file server.\n" +
@@ -231,13 +232,28 @@ public class RunClient {
                         localFile = inputArray[1];
                         remoteFile = inputArray[2];
                         groupName = inputArray[3];
-                        file_client.upload(localFile, remoteFile, groupName, mytoken);
-                        System.out.println("Uploaded " + localFile + " to " + remoteFile + ".");
+                        FileKey fk = group_client.uploadFile(mytoken, groupName);
+                        file_client.upload(localFile, remoteFile, groupName, mytoken, fk);
                         break;
                     case "download":
                         remoteFile = inputArray[1];
                         localFile = inputArray[1];
-                        file_client.download(remoteFile, localFile, mytoken);
+                        groupName = inputArray[3];
+                        byte [] metadata = file_client.download(remoteFile, localFile, mytoken);
+                        System.out.println("Metadata acquired: " + metadata);
+                        SecretKey s = group_client.downloadFile(mytoken, groupName, metadata);
+                        System.out.println("Secret Key Acquired: " + s.getEncoded());
+                        File local = new File(localFile);
+                        byte[] ciphertext = new byte[(int) local.length()];            
+                        FileInputStream fis = new FileInputStream(local);
+                        fis.read(ciphertext);            
+                        System.out.println("Local File Acquired: " + ciphertext);
+                        byte[] decrypted = (byte [])EncryptionUtils.decrypt(s, ciphertext);
+                        System.out.println("Decrypted local file acquired: " + decrypted);
+                        FileOutputStream fos = new FileOutputStream(localFile);
+                        fos.write(decrypted);
+                        fos.close();
+                        fis.close();
                         System.out.println("Downloaded " + remoteFile + " to " + localFile + ".");
                         break;
                     case "delete":
@@ -282,6 +298,7 @@ public class RunClient {
                         } else {
                             System.out.println("Password change failed.");
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "createuser":
                         userName = inputArray[1];
@@ -292,6 +309,7 @@ public class RunClient {
                         } else {
                             System.out.println("User creation failed.");
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "deleteuser":
                         userName = inputArray[1];
@@ -300,6 +318,7 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to delete user");
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "creategroup":
                         groupName = inputArray[1];
@@ -308,6 +327,7 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to create group.");
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "deletegroup":
                         groupName = inputArray[1];
@@ -316,6 +336,7 @@ public class RunClient {
                         } else {
                             System.out.println("Unable to delete group.");
                         }
+                        mytoken = group_client.getToken(mytoken.getSubject(), p, EncryptionUtils.hash(fileServerPublicKey.getEncoded())); //refresh token
                         break;
                     case "addgroupuser":
                         userName = inputArray[1];
@@ -375,7 +396,7 @@ public class RunClient {
 
 
             // upload a file
-            file_client.upload(".gitignore", "test", "ADMIN", mytoken);
+            //file_client.upload(".gitignore", "test", "ADMIN", mytoken);
 
             // list files
             ArrayList<String> files = (ArrayList<String>)file_client.listFiles(mytoken);

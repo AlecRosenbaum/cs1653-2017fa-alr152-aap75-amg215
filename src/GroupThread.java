@@ -291,7 +291,6 @@ public class GroupThread extends Thread {
 								}
 							}
 						}
-
 						writeObjectToOutput(response);
 					} else if (message.getMessage().equals("UFILE")) {
 						if (message.getObjContents().size() < 2) {
@@ -303,12 +302,17 @@ public class GroupThread extends Thread {
 								Token token = (Token)message.getObjContents().get(0); //Extract the token
 								String group = (String)message.getObjContents().get(1); //Extract the username
 								FileKey fk = uploadFile(group, token);
-								response = new Envelope("OK"); //Success
-								response.addObject(fk);
+								if(fk == null) {
+									response = new Envelope("FAIL");
+								} else {
+									response = new Envelope("OK"); //Success
+									response.addObject(fk);
+								}
 							}
 						}
+						writeObjectToOutput(response);
 					} else if (message.getMessage().equals("DFILE")) {
-						if (message.getObjContents().size() < 2) {
+						if (message.getObjContents().size() < 3) {
 							response = new Envelope("FAIL");
 						} else {
 							response = new Envelope("FAIL");
@@ -316,13 +320,19 @@ public class GroupThread extends Thread {
 							if (message.getObjContents().get(0) != null && message.getObjContents().get(1) != null) {
 								Token token = (Token)message.getObjContents().get(0); //Extract the token
 								String group = (String)message.getObjContents().get(1); //Extract the username
-								FileKey fk = uploadFile(token, group):
-								response = new Envelope("OK"); //Success
-								response.addObject(fk);
+								byte [] ek = (byte [])message.getObjContents().get(2);
+								SecretKey s = downloadFile(group, ek, token);
+								if(s == null) {
+									response = new Envelope("FAIL");
+								} else {
+									response = new Envelope("OK");
+									response.addObject(s);
+								}
 							}
 						}
-					}
-					else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
+						
+						writeObjectToOutput(response);
+					} else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
 						socket.close(); //Close the socket
 						proceed = false; //End this communication loop
 					} else {
@@ -513,12 +523,24 @@ public class GroupThread extends Thread {
 		}
 	}
 
-	public boolean uploadFile(String group, UserToken token) {
+	public FileKey uploadFile(String group, UserToken token) {
+		String requester = token.getSubject();
 		if (my_gs.userList.checkUser(requester)) {
 			if (my_gs.groups.contains(group)) {
-
+				return my_gs.gfk.upload(group);
 			}
 		}
+		return null;
+	}
+
+	public SecretKey downloadFile(String group, byte[] encryptedKey, UserToken token) {
+		String requester = token.getSubject();
+		if (my_gs.userList.checkUser(requester)) {
+			if (my_gs.groups.contains(group)) {
+				return my_gs.gfk.download(group, encryptedKey);
+			}
+		}
+		return null;
 	}
 
 	public boolean addUserToGroup(String username, String groupname, UserToken token) {

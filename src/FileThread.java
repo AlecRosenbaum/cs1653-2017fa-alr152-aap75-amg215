@@ -185,6 +185,11 @@ public class FileThread extends Thread {
 								File file = new File("shared_files/" + remotePath.replace('/', '_'));
 								file.createNewFile();
 								FileOutputStream fos = new FileOutputStream(file);
+								String metadataFileString = "shared_files/metadata-" + remotePath.replace('/', '_');							
+								File metadataFile = new File(metadataFileString);
+								metadataFile.createNewFile();
+								FileOutputStream metadataFos = new FileOutputStream(metadataFile);
+								System.out.println("Successfully created metadata file at " + metadataFileString);
 								System.out.printf("Successfully created file %s\n", remotePath.replace('/', '_'));
 
 								response = new Envelope("READY"); //Success
@@ -200,6 +205,7 @@ public class FileThread extends Thread {
 
 								if (e.getMessage().compareTo("EOF") == 0) {
 									System.out.printf("Transfer successful file %s\n", remotePath);
+									metadataFos.write((byte[])e.getObjContents().get(0), 0, (Integer)e.getObjContents().get(1));
 									FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath);
 									response = new Envelope("OK"); //Success
 								} else {
@@ -207,6 +213,7 @@ public class FileThread extends Thread {
 									response = new Envelope("ERROR-TRANSFER"); //Success
 								}
 								fos.close();
+								metadataFos.close();
 							}
 						}
 					}
@@ -236,6 +243,8 @@ public class FileThread extends Thread {
 
 						try {
 							File f = new File("shared_files/_" + remotePath.replace('/', '_'));
+							String metadataFileString = "shared_files/metadata-_" + remotePath.replace('/', '_');	
+							File metadataFile = new File(metadataFileString);
 							if (!f.exists()) {
 								System.out.printf("Error file %s missing from disk\n", "_" + remotePath.replace('/', '_'));
 								e = new Envelope("ERROR_NOTONDISK");
@@ -243,6 +252,10 @@ public class FileThread extends Thread {
 
 							} else {
 								FileInputStream fis = new FileInputStream(f);
+								byte[] metadata = new byte[(int) metadataFile.length()];
+								FileInputStream mfis = new FileInputStream(metadataFile);
+								mfis.read(metadata);
+								mfis.close();
 
 								do {
 									byte[] buf = new byte[4096];
@@ -274,11 +287,12 @@ public class FileThread extends Thread {
 								if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 
 									e = new Envelope("EOF");
+									e.addObject(metadata);
 									writeObjectToOutput(e);
 
 									e = (Envelope) readObjectFromInput();
 									if (e.getMessage().compareTo("OK") == 0) {
-										System.out.printf("File data upload successful\n");
+										System.out.printf("File data download successful\n");
 									} else {
 
 										System.out.printf("Upload failed: %s\n", e.getMessage());

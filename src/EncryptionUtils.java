@@ -21,6 +21,17 @@ public abstract class EncryptionUtils {
 		}
 	}
 
+	public static byte[] encrypt(SecretKey key, byte[] in) {
+		try {
+			final Cipher c = Cipher.getInstance("AES", "BC");
+			c.init(Cipher.ENCRYPT_MODE, key);
+			return c.doFinal(in);
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+			return null;
+		}
+	}
+
 	public static Object decrypt(SecretKey key, byte[] cypherText) {
 		try {
 			final Cipher c = Cipher.getInstance("AES", "BC");
