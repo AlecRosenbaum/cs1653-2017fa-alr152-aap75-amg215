@@ -6,6 +6,7 @@ import java.util.*;
 
 
 public class GroupFileKeys implements java.io.Serializable {
+	private static final long serialVersionUID = -7726335089122193468L;
     protected ArrayList<String> groups;
     protected ArrayList<SecretKey> keys;
     private static String backupPath = "GroupFileKeys.bin";
