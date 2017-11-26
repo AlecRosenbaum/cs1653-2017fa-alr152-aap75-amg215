@@ -293,7 +293,33 @@ public class GroupThread extends Thread {
 
 						writeObjectToOutput(response);
 					} else if (message.getMessage().equals("UFILE")) {
-						
+						if (message.getObjContents().size() < 2) {
+							response = new Envelope("FAIL");
+						} else {
+							response = new Envelope("FAIL");
+
+							if (message.getObjContents().get(0) != null && message.getObjContents().get(1) != null) {
+								Token token = (Token)message.getObjContents().get(0); //Extract the token
+								String group = (String)message.getObjContents().get(1); //Extract the username
+								FileKey fk = uploadFile(group, token);
+								response = new Envelope("OK"); //Success
+								response.addObject(fk);
+							}
+						}
+					} else if (message.getMessage().equals("DFILE")) {
+						if (message.getObjContents().size() < 2) {
+							response = new Envelope("FAIL");
+						} else {
+							response = new Envelope("FAIL");
+
+							if (message.getObjContents().get(0) != null && message.getObjContents().get(1) != null) {
+								Token token = (Token)message.getObjContents().get(0); //Extract the token
+								String group = (String)message.getObjContents().get(1); //Extract the username
+								FileKey fk = uploadFile(token, group):
+								response = new Envelope("OK"); //Success
+								response.addObject(fk);
+							}
+						}
 					}
 					else if (message.getMessage().equals("DISCONNECT")) { //Client wants to disconnect
 						socket.close(); //Close the socket
@@ -460,6 +486,7 @@ public class GroupThread extends Thread {
 			} else {
 				// add group to list
 				my_gs.groups.add(groupname);
+				my_gs.gfk.addGroup(groupname);
 
 				// add group to user, make user owner of group
 				my_gs.userList.addGroup(requester, groupname);
@@ -486,6 +513,7 @@ public class GroupThread extends Thread {
 					my_gs.userList.removeOwnership(requester, group);
 					my_gs.userList.removeGroupMembers(group);
 					my_gs.groups.remove(group);
+					my_gs.gfk.remove(group);
 					return true;
 
 				} else {
@@ -497,9 +525,16 @@ public class GroupThread extends Thread {
 		} else {
 			return false;//user does not exist
 		}
-
-
 	}
+
+	public boolean uploadFile(String group, UserToken token) {
+		if (my_gs.userList.checkUser(requester)) {
+			if (my_gs.groups.contains(group)) {
+
+			}
+		}
+	}
+
 	public boolean addUserToGroup(String username, String groupname, UserToken token) {
 		String requester = token.getSubject();
 

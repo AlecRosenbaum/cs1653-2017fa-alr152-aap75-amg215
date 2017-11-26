@@ -237,8 +237,26 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
-	public boolean uploadFile(UserToken token, String group) {
-		
+	public FileKey uploadFile(UserToken token, String group) {
+		try {
+			Envelope message = null, response = null;
+			message = new Envelope("UFILE");
+			message.addObject(token); //Add token
+			message.addObject(group); //Add group string
+			this.writeObjectToOutput(message);
+
+			response = (Envelope) this.readObjectFromInput();
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return (FileKey)response.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
+			}
+
+			return false;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
 	}
 
 }
