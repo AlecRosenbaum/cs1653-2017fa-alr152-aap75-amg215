@@ -107,8 +107,10 @@ public class FileThread extends Thread {
 			System.arraycopy(enc, 0, base_integ, base.length, integ.length);
 			byte[] base_integ_hash = EncryptionUtils.hash(base_enc);
 
-			this.DH_Key_Encryption = new SecretKeySpec(base_enc_hash, 0, base_enc_hash.length, "AES");
-			this.DH_Key_Integrity = new SecretKeySpec(base_integ_hash, 0, base_integ_hash.length, "AES");
+			this.DH_Key_Encryption = new SecretKeySpec(base_enc_hash, 0, 16, "AES");
+			this.DH_Key_Integrity = new SecretKeySpec(base_integ_hash, 0, 16, "AES");
+
+			byte[] my_fingerprint = EncryptionUtils.hash(my_fs.getPublicKey().getEncoded());
 
 			do {
 				Envelope e = (Envelope) readObjectFromInput();
@@ -129,7 +131,7 @@ public class FileThread extends Thread {
 						} else {
 							// token contains user, server, and groups
 							Token yourToken = (Token)e.getObjContents().get(0); //Extract token
-							if (!EncryptionUtils.verify(yourToken.getSignature(), yourToken.stringify(), my_fs.trustedPubKey)) {
+							if (!EncryptionUtils.verify(yourToken.getSignature(), yourToken.stringify(), my_fs.trustedPubKey) || !Arrays.equals(my_fingerprint, yourToken.getFingerprint())) {
 								response = new Envelope("FAIL-INVALID-TOKEN");
 								writeObjectToOutput(response);
 								continue;
@@ -167,7 +169,7 @@ public class FileThread extends Thread {
 							String remotePath = (String)e.getObjContents().get(0);
 							String group = (String)e.getObjContents().get(1);
 							Token yourToken = (Token)e.getObjContents().get(2); //Extract token
-							if (!EncryptionUtils.verify(yourToken.getSignature(), yourToken.stringify(), my_fs.trustedPubKey)) {
+							if (!EncryptionUtils.verify(yourToken.getSignature(), yourToken.stringify(), my_fs.trustedPubKey) || !Arrays.equals(my_fingerprint, yourToken.getFingerprint())) {
 								response = new Envelope("FAIL-INVALID-TOKEN");
 								writeObjectToOutput(response);
 								continue;
@@ -214,7 +216,7 @@ public class FileThread extends Thread {
 
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
-					if (!EncryptionUtils.verify(t.getSignature(), t.stringify(), my_fs.trustedPubKey)) {
+					if (!EncryptionUtils.verify(t.getSignature(), t.stringify(), my_fs.trustedPubKey) || !Arrays.equals(my_fingerprint, t.getFingerprint())) {
 						response = new Envelope("FAIL-INVALID-TOKEN");
 						writeObjectToOutput(response);
 						continue;
@@ -299,7 +301,7 @@ public class FileThread extends Thread {
 
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
-					if (!EncryptionUtils.verify(t.getSignature(), t.stringify(), my_fs.trustedPubKey)) {
+					if (!EncryptionUtils.verify(t.getSignature(), t.stringify(), my_fs.trustedPubKey) || !Arrays.equals(my_fingerprint, t.getFingerprint())) {
 						response = new Envelope("FAIL-INVALID-TOKEN");
 						writeObjectToOutput(response);
 						continue;

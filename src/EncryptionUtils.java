@@ -6,6 +6,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
+import java.lang.RuntimeException;
 
 public abstract class EncryptionUtils {
 
@@ -160,9 +161,39 @@ public abstract class EncryptionUtils {
 		return sha256_HMAC.doFinal(serialize(obj));
 	}
 
-	public static byte[] hash(byte[] data) throws NoSuchProviderException, NoSuchAlgorithmException {
-		MessageDigest digest = MessageDigest.getInstance("SHA-256", "BC");
-		return digest.digest(data);
+	public static byte[] hash(byte[] data) {
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA-256", "BC");
+			return digest.digest(data);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
+
+	public static String prettify(byte[] input) {
+        StringBuilder sb = new StringBuilder(input.length * 2);
+        for(byte b : input) {
+            sb.append(String.format("%02x", b));
+        }
+        
+        String output = "";
+        int counter = 0;
+        for(char c : sb.toString().toCharArray())
+        {
+            counter++;
+            output = output + c;
+            if(counter == 2) {
+                counter = 0;
+                output = output + ":"; 
+            }
+        }
+        if(output.charAt(output.length() - 1) == ':')
+        {
+            sb = new StringBuilder(output);
+            sb.deleteCharAt(output.length() - 1);
+            output = sb.toString();
+        }
+        return output.toUpperCase();
+    }
 
 }
