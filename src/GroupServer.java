@@ -80,7 +80,6 @@ public class GroupServer extends Server {
 			System.out.println("Group file keys not found, creating new object...");
 			//Create new GroupFileKeys			
 			gfk = new GroupFileKeys(this);
-			gfk.addGroup("ADMIN");
 		} catch (ClassNotFoundException e) {
 			System.out.println("Error reading from Group File Keys file");
 			System.exit(-1);

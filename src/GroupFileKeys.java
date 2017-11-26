@@ -20,6 +20,7 @@ public class GroupFileKeys implements java.io.Serializable {
         groups = new ArrayList<String>();
         keys = new ArrayList<SecretKey>();
         gs = new_gs;
+        addGroup("ADMIN");
     }
 
     public boolean addGroup(String name) {
@@ -29,6 +30,7 @@ public class GroupFileKeys implements java.io.Serializable {
             keyGen.init(128);
             SecretKey secretKey = keyGen.generateKey();
             keys.add(secretKey);
+            backup();
             return true;
         } catch(Exception e) {
             return false;
@@ -68,6 +70,7 @@ public class GroupFileKeys implements java.io.Serializable {
         try {
             ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(backupPath));
             outStream.writeObject(this);
+            outStream.close();
         } catch(Exception e) {
             System.out.println("Error backing up approved files");
         }

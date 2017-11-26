@@ -233,26 +233,27 @@ public class RunClient {
                         remoteFile = inputArray[2];
                         groupName = inputArray[3];
                         FileKey fk = group_client.uploadFile(mytoken, groupName);
+                        if(fk == null) {
+                            System.out.println("Unauthorized");
+                            break;
+                        }
                         file_client.upload(localFile, remoteFile, groupName, mytoken, fk);
                         break;
                     case "download":
                         remoteFile = inputArray[1];
-                        localFile = inputArray[1];
+                        localFile = inputArray[2];
                         groupName = inputArray[3];
                         byte [] metadata = file_client.download(remoteFile, localFile, mytoken);
-                        System.out.println("Metadata acquired: " + metadata);
                         SecretKey s = group_client.downloadFile(mytoken, groupName, metadata);
-                        System.out.println("Secret Key Acquired: " + s.getEncoded());
+                        if(s == null) {
+                            System.out.println("Unauthorized");
+                            break;
+                        }
                         File local = new File(localFile);
                         byte[] ciphertext = new byte[(int) local.length()];            
                         FileInputStream fis = new FileInputStream(local);
                         fis.read(ciphertext);            
-                        System.out.println("Local File Acquired: " + ciphertext);
-                        byte[] decrypted = (byte [])EncryptionUtils.decrypt(s, ciphertext);
-                        System.out.println("Decrypted local file acquired: " + decrypted);
-                        FileOutputStream fos = new FileOutputStream(localFile);
-                        fos.write(decrypted);
-                        fos.close();
+                        EncryptionUtils.decryptToFile(s, ciphertext, new File(localFile));
                         fis.close();
                         System.out.println("Downloaded " + remoteFile + " to " + localFile + ".");
                         break;

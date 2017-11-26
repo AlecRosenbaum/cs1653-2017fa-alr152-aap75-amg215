@@ -43,6 +43,21 @@ public abstract class EncryptionUtils {
 		}
 	}
 
+	public static boolean decryptToFile(SecretKey key, byte[] cypherText, File outputFile) {
+		try {
+			final Cipher c = Cipher.getInstance("AES", "BC");
+			c.init(Cipher.DECRYPT_MODE, key);
+			byte [] plaintext = c.doFinal(cypherText);
+			FileOutputStream fos = new FileOutputStream(outputFile);
+			fos.write(plaintext);
+			fos.close();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+			return false;
+		}
+	}
+
 	public static byte[] serialize(Object obj) throws IOException {
 		ByteArrayOutputStream b = new ByteArrayOutputStream();
 		ObjectOutputStream o = new ObjectOutputStream(b);
