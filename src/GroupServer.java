@@ -37,7 +37,7 @@ public class GroupServer extends Server {
 
 		String userFile = "UserList.bin";
 		String groupFile = "GroupList.bin";
-		String groupKeyFile = " ";
+		String groupKeyFile = "GroupFileKeys.bin";
 		Scanner console = new Scanner(System.in);
 		ObjectInputStream userStream;
 		ObjectInputStream groupStream;
@@ -79,7 +79,7 @@ public class GroupServer extends Server {
 		} catch (FileNotFoundException e) {
 			System.out.println("Group file keys not found, creating new object...");
 			//Create new GroupFileKeys			
-			gfk = new GroupFileKeys(this);
+			gfk = new GroupFileKeys();
 		} catch (ClassNotFoundException e) {
 			System.out.println("Error reading from Group File Keys file");
 			System.exit(-1);

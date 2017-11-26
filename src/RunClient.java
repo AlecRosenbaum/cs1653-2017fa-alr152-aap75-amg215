@@ -527,6 +527,7 @@ class ApprovedFileServerList implements java.io.Serializable {
         try {
             ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(fileServersPath));
             outStream.writeObject(this);
+            outStream.close();
         } catch(Exception e) {
             System.out.println("Error backing up approved files");
         }

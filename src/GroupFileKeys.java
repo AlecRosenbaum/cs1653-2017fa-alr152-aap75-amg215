@@ -6,16 +6,13 @@ import java.util.*;
 
 
 public class GroupFileKeys implements java.io.Serializable {
-    private static final long serialVersionUID = -8911161283900215836L;
     protected ArrayList<String> groups;
     protected ArrayList<SecretKey> keys;
-    protected GroupServer gs;
     private static String backupPath = "GroupFileKeys.bin";
 
-    public GroupFileKeys(GroupServer new_gs) {
+    public GroupFileKeys() {
         groups = new ArrayList<String>();
         keys = new ArrayList<SecretKey>();
-        gs = new_gs;
         addGroup("ADMIN");
     }
 
