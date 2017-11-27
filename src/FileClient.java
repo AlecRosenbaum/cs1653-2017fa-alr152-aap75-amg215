@@ -59,50 +59,39 @@ public class FileClient extends Client implements FileClientInterface {
 		try {
 			if (!file.exists()) {
 				file.createNewFile();
-				FileOutputStream fos = new FileOutputStream(file);
+			}
+			FileOutputStream fos = new FileOutputStream(file);
 
-				Envelope env = new Envelope("DOWNLOADF"); //Success
-				env.addObject(sourceFile);
-				env.addObject(token);
+			Envelope env = new Envelope("DOWNLOADF"); //Success
+			env.addObject(sourceFile);
+			env.addObject(token);
+			this.writeObjectToOutput(env);
+
+			env = (Envelope) this.readObjectFromInput();
+
+			while (env.getMessage().compareTo("CHUNK") == 0) {
+				fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
+				System.out.printf(".");
+				env = new Envelope("DOWNLOADF"); //Success
 				this.writeObjectToOutput(env);
-
 				env = (Envelope) this.readObjectFromInput();
+			}
+			fos.close();
 
-				while (env.getMessage().compareTo("CHUNK") == 0) {
-					fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
-					System.out.printf(".");
-					env = new Envelope("DOWNLOADF"); //Success
-					this.writeObjectToOutput(env);
-					env = (Envelope) this.readObjectFromInput();
-				}
+			if (env.getMessage().compareTo("EOF") == 0) {
 				fos.close();
-
-				if (env.getMessage().compareTo("EOF") == 0) {
-					fos.close();
-					returnAr = (byte[])env.getObjContents().get(0);
-					System.out.printf("\nTransfer successful file %s\n", sourceFile);
-					env = new Envelope("OK"); //Success
-					this.writeObjectToOutput(env);
-				} else {
-					System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
-					file.delete();
-					return returnAr;
-				}
+				returnAr = (byte[])env.getObjContents().get(0);
+				System.out.printf("\nTransfer successful file %s\n", sourceFile);
+				env = new Envelope("OK"); //Success
+				this.writeObjectToOutput(env);
+			} else {
+				System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
+				file.delete();
 			}
-
-			else {
-				System.out.printf("Error couldn't create file %s\n", destFile);
-				return returnAr;
-			}
-
-
 		} catch (IOException e1) {
-
 			System.out.printf("Error couldn't create file %s\n", destFile);
-			return returnAr;
-
-
 		}
+		System.out.println("end of download - n: " + this.n);
 		return returnAr;
 	}
 

@@ -141,6 +141,7 @@ public abstract class Client {
         if (isConnected()) {
             try {
                 obj.setN(++this.n);
+
                 obj.setHMAC(obj.calcHMAC(this.DH_Key_Integrity));
                 output.writeObject(EncryptionUtils.encrypt(this.DH_Key_Encryption, obj));
                 return true;
@@ -167,7 +168,7 @@ public abstract class Client {
                     System.err.println(env.getN() + " " + this.n);
                     this.disconnect();
                 }
-                this.n = env.getN() + 1;
+                this.n = env.getN();
 
                 // validate hmac
                 if (!Arrays.equals(env.getHMAC(), env.calcHMAC(this.DH_Key_Integrity))) {
