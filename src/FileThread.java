@@ -185,7 +185,7 @@ public class FileThread extends Thread {
 								File file = new File("shared_files/" + remotePath.replace('/', '_'));
 								file.createNewFile();
 								FileOutputStream fos = new FileOutputStream(file);
-								String metadataFileString = "shared_files/metadata-" + remotePath.replace('/', '_');							
+								String metadataFileString = "shared_files/metadata-" + remotePath.replace('/', '_');
 								File metadataFile = new File(metadataFileString);
 								metadataFile.createNewFile();
 								FileOutputStream metadataFos = new FileOutputStream(metadataFile);
@@ -234,82 +234,75 @@ public class FileThread extends Thread {
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);
 						e = new Envelope("ERROR_FILEMISSING");
 						writeObjectToOutput(e);
-
-					} else if (!t.getGroups().contains(sf.getGroup())) {
+						continue;
+					}
+					if (!t.getGroups().contains(sf.getGroup())) {
 						System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
 						e = new Envelope("ERROR_PERMISSION");
 						writeObjectToOutput(e);
-					} else {
+						continue;
+					}
 
-						try {
-							File f = new File("shared_files/_" + remotePath.replace('/', '_'));
-							String metadataFileString = "shared_files/metadata-_" + remotePath.replace('/', '_');	
-							File metadataFile = new File(metadataFileString);
-							if (!f.exists()) {
-								System.out.printf("Error file %s missing from disk\n", "_" + remotePath.replace('/', '_'));
-								e = new Envelope("ERROR_NOTONDISK");
+
+					try {
+						File f = new File("shared_files/_" + remotePath.replace('/', '_'));
+						String metadataFileString = "shared_files/metadata-_" + remotePath.replace('/', '_');
+						File metadataFile = new File(metadataFileString);
+						if (!f.exists()) {
+							System.out.printf("Error file %s missing from disk\n", "_" + remotePath.replace('/', '_'));
+							e = new Envelope("ERROR_NOTONDISK");
+							writeObjectToOutput(e);
+
+						} else {
+							FileInputStream fis = new FileInputStream(f);
+							byte[] metadata = new byte[(int) metadataFile.length()];
+							FileInputStream mfis = new FileInputStream(metadataFile);
+							mfis.read(metadata);
+							mfis.close();
+
+							do {
+								byte[] buf = new byte[4096];
+								if (e.getMessage().compareTo("DOWNLOADF") != 0) {
+									System.out.printf("Server error: %s\n", e.getMessage());
+									break;
+								}
+								e = new Envelope("CHUNK");
+								int file_n = fis.read(buf); //can throw an IOException
+								if (file_n > 0) {
+									System.out.printf(".");
+								} else if (file_n < 0) {
+									System.out.println("Read error");
+								}
+
+								e.addObject(buf);
+								e.addObject(new Integer(file_n));
+
 								writeObjectToOutput(e);
 
-							} else {
-								FileInputStream fis = new FileInputStream(f);
-								byte[] metadata = new byte[(int) metadataFile.length()];
-								FileInputStream mfis = new FileInputStream(metadataFile);
-								mfis.read(metadata);
-								mfis.close();
+								e = (Envelope) readObjectFromInput();
+							} while (fis.available() > 0);
 
-								do {
-									byte[] buf = new byte[4096];
-									if (e.getMessage().compareTo("DOWNLOADF") != 0) {
-										System.out.printf("Server error: %s\n", e.getMessage());
-										break;
-									}
-									e = new Envelope("CHUNK");
-									int n = fis.read(buf); //can throw an IOException
-									if (n > 0) {
-										System.out.printf(".");
-									} else if (n < 0) {
-										System.out.println("Read error");
+							//If server indicates success, return the member list
+							if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 
-									}
+								e = new Envelope("EOF");
+								e.addObject(metadata);
+								writeObjectToOutput(e);
 
-
-									e.addObject(buf);
-									e.addObject(new Integer(n));
-
-									writeObjectToOutput(e);
-
-									e = (Envelope) readObjectFromInput();
-
-
-								} while (fis.available() > 0);
-
-								//If server indicates success, return the member list
-								if (e.getMessage().compareTo("DOWNLOADF") == 0) {
-
-									e = new Envelope("EOF");
-									e.addObject(metadata);
-									writeObjectToOutput(e);
-
-									e = (Envelope) readObjectFromInput();
-									if (e.getMessage().compareTo("OK") == 0) {
-										System.out.printf("File data download successful\n");
-									} else {
-
-										System.out.printf("Upload failed: %s\n", e.getMessage());
-
-									}
-
+								e = (Envelope) readObjectFromInput();
+								if (e.getMessage().compareTo("OK") == 0) {
+									System.out.printf("File data download successful\n");
 								} else {
-
 									System.out.printf("Upload failed: %s\n", e.getMessage());
-
 								}
+							} else {
+								System.out.printf("Upload failed: %s\n", e.getMessage());
 							}
-						} catch (Exception e1) {
-							System.err.println("Error: " + e.getMessage());
-							e1.printStackTrace(System.err);
-
 						}
+					} catch (Exception e1) {
+						System.err.println("Error: " + e.getMessage());
+						e1.printStackTrace(System.err);
+
 					}
 				} else if (e.getMessage().compareTo("DELETEF") == 0) {
 
@@ -379,10 +372,12 @@ public class FileThread extends Thread {
 
 			// validate sequence
 			if (env.getN() <= this.n) {
-				System.err.println(env.getN() + " " + this.n);
+				System.err.println("Sequence not valid. " + env.getN() + ", " + this.n);
 				return null;
 			} else {
-				this.n = env.getN() + 1;
+				this.n = env.getN();
+				System.out.println("ReadFromInput - n: " + this.n);
+				this.printStackTrace();
 			}
 
 			// validate hmac
@@ -410,7 +405,7 @@ public class FileThread extends Thread {
 	 */
 	public boolean writeObjectToOutput(Envelope obj) {
 		try {
-			obj.setN(this.n++);
+			obj.setN(++this.n);
 			obj.setHMAC(obj.calcHMAC(this.DH_Key_Integrity));
 			this.output.writeObject(EncryptionUtils.encrypt(this.DH_Key_Encryption, obj));
 			return true;
@@ -420,5 +415,4 @@ public class FileThread extends Thread {
 		}
 		return false;
 	}
-
 }
