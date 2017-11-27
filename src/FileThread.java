@@ -376,7 +376,6 @@ public class FileThread extends Thread {
 				return null;
 			} else {
 				this.n = env.getN();
-				System.out.println("ReadFromInput - n: " + this.n);
 			}
 
 			// validate hmac

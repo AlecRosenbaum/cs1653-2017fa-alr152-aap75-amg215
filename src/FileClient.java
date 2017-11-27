@@ -91,7 +91,6 @@ public class FileClient extends Client implements FileClientInterface {
 		} catch (IOException e1) {
 			System.out.printf("Error couldn't create file %s\n", destFile);
 		}
-		System.out.println("end of download - n: " + this.n);
 		return returnAr;
 	}
 
