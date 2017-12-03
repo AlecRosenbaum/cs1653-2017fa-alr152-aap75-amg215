@@ -6,6 +6,7 @@ import java.net.Socket;
 import javax.crypto.*;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.PublicKey;
 
 public class GroupClient extends Client implements GroupClientInterface {
 
@@ -166,6 +167,21 @@ public class GroupClient extends Client implements GroupClientInterface {
 			return null;
 		}
 	}
+
+	public PublicKey initialConnect(String server, int port)
+    {
+		try {
+			sock = new Socket(server, port);		
+			output = new ObjectOutputStream(sock.getOutputStream());
+			input = new ObjectInputStream(sock.getInputStream());
+	
+			output.writeObject("key request");
+			return (PublicKey)input.readObject();
+			
+		} catch(Exception e) {
+			return null;
+		}			
+    }
 
 	public boolean addUserToGroup(String username, String groupname, UserToken token) {
 		try {

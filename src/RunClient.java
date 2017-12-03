@@ -10,7 +10,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RunClient {
 
-    private static String fileServersPath = "APPROVED_FILE_SERVERS.bin";
+    private static String fileServersPath = "APPROVED_FILE_SERVERS.bin";    
+    private static String groupServersPath = "APPROVED_GROUP_SERVER.bin";
 
     private static Scanner console;
     private static String group_server_url;
@@ -18,10 +19,13 @@ public class RunClient {
     private static String file_server_url;
     private static int file_server_port;                
     private static GroupClient group_client;  
+    private static GroupClient new_group_client;
     private static FileClient file_client;
     private static FileClient new_file_client;
-    private static PublicKey fileServerPublicKey;
-    private static ApprovedFileServerList approvedFileServers;    
+    private static PublicKey fileServerPublicKey;    
+    private static PublicKey groupServerPublicKey;
+    private static ApprovedServerList approvedFileServers;    
+    private static ApprovedServerList approvedGroupServers;    
 
     public static boolean fconnect(String url, int port) {
         new_file_client = new FileClient();
@@ -29,7 +33,7 @@ public class RunClient {
         if(fileServerPublicKey == null) {
             fileServerPublicKey = new_file_client.initialConnect(url, port);
             try {
-                System.out.print("Server Provided Public Key Fingerprint For Authentication:\n\n\t" + prettify(EncryptionUtils.hash(fileServerPublicKey.getEncoded())) + "\n\n" +
+                System.out.print("File Server Provided Public Key Fingerprint For Authentication:\n\n\t" + prettify(EncryptionUtils.hash(fileServerPublicKey.getEncoded())) + "\n\n" +
                 "Entery 'Y' to accept or 'N' to reject: ");
             } catch (Exception e)
             {
@@ -55,6 +59,38 @@ public class RunClient {
         }
     }
 
+    public static boolean gconnect(String url, int port) {
+        new_group_client = new GroupClient();
+        groupServerPublicKey = approvedGroupServers.checkServer(url, port);
+        if(groupServerPublicKey == null) {
+            groupServerPublicKey = new_group_client.initialConnect(url, port);
+            try {
+                System.out.print(" Group Server Provided Public Key Fingerprint For Authentication:\n\n\t" + prettify(EncryptionUtils.hash(groupServerPublicKey.getEncoded())) + "\n\n" +
+                "Entery 'Y' to accept or 'N' to reject: ");
+            } catch (Exception e)
+            {
+                return false;
+            }     
+            if(console.nextLine().toUpperCase().equals("Y")) {
+                approvedGroupServers.addServer(groupServerPublicKey, url, port);
+                new_group_client = new GroupClient();
+            }else {
+                System.out.println("Group Server Public Key NOT approved.");
+                return false;
+            }
+        }
+        if (new_group_client.connect(url, port, groupServerPublicKey)) {
+            System.out.println("Connected to group server " + url + ":" + port);
+            group_client = new_group_client;
+            group_server_url = url;
+            group_server_port = port;
+            return true;
+        } else {
+            System.out.println("Unable to connect to group server " + url + ":" + port);
+            return false;
+        }
+    }
+
     public static void main(String[] args) {
         // args:
         //  - group server url
@@ -74,19 +110,35 @@ public class RunClient {
         group_server_url = args[0];
         file_server_url = args[2];                
         group_client = new GroupClient();        
+        new_group_client = new GroupClient();
         file_client = new FileClient();
         new_file_client = new FileClient();
         fileServerPublicKey = null;
-        approvedFileServers = new ApprovedFileServerList();
+        approvedFileServers = new ApprovedServerList(true);
         try {
             File approvedFileServersFile = new File(fileServersPath);
             if(approvedFileServersFile.exists() && !approvedFileServersFile.isDirectory()) { 
                 FileInputStream fis = new FileInputStream(fileServersPath);
                 ObjectInputStream fileStream = new ObjectInputStream(fis);
-                approvedFileServers = (ApprovedFileServerList)fileStream.readObject();
+                approvedFileServers = (ApprovedServerList)fileStream.readObject();
             }
         } catch(Exception e) {
-            System.out.println("Error loading approved files.");            
+            System.out.println("Error loading approved file servers.");            
+            System.out.println(e.getCause());
+            return;
+        }
+
+        approvedGroupServers = new ApprovedServerList(false);
+        try {
+            File approvedGroupServersFile = new File(groupServersPath);
+            if(approvedGroupServersFile.exists() && !approvedGroupServersFile.isDirectory()) { 
+                FileInputStream fis = new FileInputStream(groupServersPath);
+                ObjectInputStream fileStream = new ObjectInputStream(fis);
+                approvedGroupServers = (ApprovedServerList)fileStream.readObject();
+                System.out.println("Loaded approved GS");
+            }
+        } catch(Exception e) {
+            System.out.println("Error loading approved group servers.");            
             System.out.println(e.getCause());
             return;
         }
@@ -102,24 +154,22 @@ public class RunClient {
         }
 
         
+        // instantiate file client and group client
+
+
+        System.out.println("Connecting to group server...");
         boolean success = false;
         boolean firstTime = true;        
-        // instantiate file client and group client
         do {
             if(!firstTime) {
-                System.out.print("Enter a file server url: ");
+                System.out.print("Enter a group server url: ");
                 group_server_url = console.nextLine();
-                System.out.print("Enter a file server port: ");
+                System.out.print("Enter a group server port: ");
                 group_server_port = Integer.valueOf(console.nextLine());
             }
             firstTime = false;
-            group_client = new GroupClient();        
-            System.out.println("Connecting to group server...");
-            if (group_client.connect(group_server_url, group_server_port, null)) {
-                System.out.println("Connected to group server " + group_server_url + ":" + group_server_port);
+            if(gconnect(group_server_url, group_server_port)) {
                 success = true;
-            } else {
-                System.out.println("Unable to connect to group server " + group_server_url + ":" + group_server_port);
             }
         } while (!success);  
 
@@ -491,17 +541,20 @@ public class RunClient {
     }
 }
 
-class ApprovedFileServerList implements java.io.Serializable {
+class ApprovedServerList implements java.io.Serializable {
     private static final long serialVersionUID = -8911161283900345136L;
     ArrayList<PublicKey> pks;
     ArrayList<String> urls;
     ArrayList<Integer> ports;
-    private static String fileServersPath = "APPROVED_FILE_SERVERS.bin";
+    boolean isFile;
+    private static String fileServersPath = "APPROVED_FILE_SERVERS.bin";    
+    private static String groupServersPath = "APPROVED_GROUP_SERVER.bin";
 
-    public ApprovedFileServerList () {
+    public ApprovedServerList (boolean ifi) {
         pks = new ArrayList<PublicKey>();
         urls = new ArrayList<String>();
         ports = new ArrayList<Integer>();
+        isFile = ifi;
     }
 
     public void addServer(PublicKey new_pk, String new_url, int new_port) {
@@ -523,11 +576,15 @@ class ApprovedFileServerList implements java.io.Serializable {
 
     public void backup() {
         try {
-            ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(fileServersPath));
+            ObjectOutputStream outStream;
+            if(isFile)
+                outStream = new ObjectOutputStream(new FileOutputStream(fileServersPath));
+            else 
+                outStream = new ObjectOutputStream(new FileOutputStream(groupServersPath));
             outStream.writeObject(this);
             outStream.close();
         } catch(Exception e) {
-            System.out.println("Error backing up approved files");
+            System.out.println("Error backing up approved servers.");
         }
         
     }

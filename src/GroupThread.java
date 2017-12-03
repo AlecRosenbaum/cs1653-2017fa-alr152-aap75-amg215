@@ -57,7 +57,17 @@ public class GroupThread extends Thread {
 
 			// Exchange information for DH
 			KeyFactory clientKeyFac = KeyFactory.getInstance("DH", "BC");
-			byte[] DHinfo = (byte[]) input.readObject();
+			Object inputMessage = input.readObject();
+			byte[] DHinfo = null;
+			try {
+				DHinfo = (byte[]) inputMessage;
+			} catch (Exception e) {
+				if ("key request".equals((String)inputMessage)) {
+					output.writeObject(my_gs.getPublicKey());
+					System.out.println("Providing Public Key for Initial Authentication.");
+					return;
+				}
+			}
 			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(DHinfo);
 			PublicKey bobDHPub = clientKeyFac.generatePublic(x509KeySpec);
 
@@ -70,8 +80,14 @@ public class GroupThread extends Thread {
 			bobKeyAgreement.init(bobsKeys.getPrivate());
 			bobKeyAgreement.doPhase(bobDHPub, true);
 
+			Signature privateSignature = Signature.getInstance("SHA256withRSA", "BC");
+			privateSignature.initSign(my_gs.getPrivateKey());
+			privateSignature.update(bobsKeys.getPublic().getEncoded());
+			byte[] signature = privateSignature.sign();
+
 			// Send Bob's DH Parameters to Alice
 			output.writeObject(bobsKeys.getPublic().getEncoded());
+			output.writeObject(signature);
 
 			// Generate AES Secret Keys
 			SecretKey DH_Key = bobKeyAgreement.generateSecret("AES");
