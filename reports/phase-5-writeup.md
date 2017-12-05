@@ -94,7 +94,7 @@ The users must be able to verify the integrity of files retrieved from file serv
 
 * **B** -> **GS** `<request new key for group g>, token`
 * **GS** -> **B** `Kf, {Kf}Kg`
-* **B** encrypts file f using Kf, creates metadata = {Kf}Kg 
+* **B** encrypts file f using Kf, creates `metadata = {Kf}Kg`
 * **B** -> **FS** `<upload file>, metadata, file {f}, token`
 * **FS** modifies stored file
 * **A** -> **FS** `<request file f>, token`
