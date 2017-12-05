@@ -66,7 +66,7 @@ The group server implementation must ensure that if a user attempts to contact s
 
 #### Protection
 
-This threat will be protected through the use of a signed Diffie Hellman key exchange. All connections using Diffie Hellmen key exchanges will be initiated with the server by providing a signed message with an public key provided when the server is first connected to. This public key is approved through a prompt to the user. The prompt provides the fingerprint of the public key, which is the SHA-256 hash of the public key presented in hex. If and only if the public key is approved, will the signed Diffie Hellman exchange proceed.
+This threat will be protected through the use of a signed Diffie Hellman key exchange. All connections using Diffie Hellman key exchanges will be initiated with the server by providing a signed message with an public key provided when the server is first connected to. This public key is approved through a prompt to the user. The prompt provides the fingerprint of the public key, which is the SHA-256 hash of the public key presented in hex. If and only if the public key is approved, will the signed Diffie Hellman exchange proceed.
 
 * Bob makes an initial connection to a group server **S**
 * **B** -> **S** ``<Initial connection>``
@@ -83,7 +83,43 @@ This threat will be protected through the use of a signed Diffie Hellman key exc
 
 #### Argument
 
-This protection will assure the user of the client that they are connecting to the group server they intend to connect to. The key to the protection is that Bob has to approve the public key of the group server initially. After that, all the signed diffie hellman exchange can be verified using the approved public key. An attacker is unable to provide the correct signature in the Diffie Hellman exchange, and thus is unable to convince Bob that they are the group server.
+This protection will assure the user of the client that they are connecting to the group server they intend to connect to. The key to the protection is that Bob has to approve the public key of the group server initially. After that, all the signed Diffie Hellman exchange can be verified using the approved public key. An attacker is unable to provide the correct signature in the Diffie Hellman exchange, and thus is unable to convince Bob that they are the group server.
+
+
+### T10 - File Integrity
+
+#### Description
+
+The users must be able to verify the integrity of files retrieved from file servers. If there is no way to validate integrity, rogue file servers may modify uploaded files as they see fit with no way for an unsuspecting client to know that the file has been modified. The following shows an example of how a malicious file server (**FS**) may exploit a vulnerability in this threat model with users Bob (**B**) and Alice (**A**) and a trusted group server (**GS**):
+
+* **B** -> **GS** `<request new key for group g>, token`
+* **GS** -> **B** `Kf, {Kf}Kg`
+* **B** encrypts file f using Kf, creates metadata = {Kf}Kg 
+* **B** -> **FS** `<upload file>, metadata, file {f}, token`
+* **FS** modifies stored file
+* **A** -> **FS** `<request file f>, token`
+* **FS** -> **A** `metadata, file`
+
+Alice has now downloaded and decrypted a file that differs from the file that Bob uploaded. Alice has no way of verifying integrity on downloaded files.
+
+#### Protection
+
+This threat will be protected against by adding additional information into the metadata. Now, the metadata will include an HMAC of the file, calculated with a different key than used for signing. The new exchange and upload routines are shown below:
+
+* **B** -> **GS** `<request new key for group g>, token`
+* **GS** -> **B** `Kf, Ki, {Kf, Ki}Kg, `
+* **B** encrypts file f using `Kf`, creates `metadata = {Kf, Ki}Kg, HMAC(Ki, {f}Kf)`
+* **B** -> **FS** `<upload file>, metadata, file {f}Kf, token`
+* **FS** modifies stored file
+* **A** -> **FS** `<request file f>, token`
+* **FS** -> **A** `metadata, file`
+* **A** -> **GS** `<request to decrypt keys>, {Kf, Ki}Kg`
+* **GS** -> **A** `Kf, Ki`
+* Alice now verifies integrity using HMAC with Ki and {f}Kf, then decrypts {f}Kf using Kf
+
+#### Argument
+
+The protection will ensure integrity on stored files. If a malicious file server modifies a stored file, the HMAC stored in the metadata will no longer match. Users will detect file modification after the file is downloaded by verifying their calculated HMAC matches the HMAC stored in the metadata. The malicious file server has no way of obtaining Ki, and thus is not able to regenerate a valid HMAC after modification.
 
 ### Previous Threats
 
