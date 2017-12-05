@@ -125,7 +125,9 @@ The protection will ensure integrity on stored files. If a malicious file server
 
 The addition of these protections do not invalidate T1-T7.
 
-The only protocol modified is the prefix to the diffie helman exchange, which only adds the step of initially sending the public key from the group server to the client. This does not invalidate any of the protections offered by the diffie hellman exchange.
+One protocol modified is the prefix to the diffie helman exchange, which only adds the step of initially sending the public key from the group server to the client. This does not invalidate any of the protections offered by the diffie hellman exchange.
+
+T10's protocol modification does not allow any unauthorized parties access to any keys, and only adds new information encrypted with a new key.
 
 
 ## Conclusion
