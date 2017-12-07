@@ -1,5 +1,7 @@
 # Phase 5 Writeup
 
+Per Dr Lee's instructions we have included three threats in this writeup. We completed Threat 8 and protected against it before speaking to him. He wanted more but said we could just document 2 additional threats without code to recieve full points. 
+
 ## Group Information
 
 * Alec Rosenbaum
@@ -84,6 +86,41 @@ This threat will be protected through the use of a signed Diffie Hellman key exc
 #### Argument
 
 This protection will assure the user of the client that they are connecting to the group server they intend to connect to. The key to the protection is that Bob has to approve the public key of the group server initially. After that, all the signed Diffie Hellman exchange can be verified using the approved public key. An attacker is unable to provide the correct signature in the Diffie Hellman exchange, and thus is unable to convince Bob that they are the group server.
+
+### T9 - Confidential File Names
+
+#### Description
+
+The current implementation of the File Servers protects the contents of the files but not the names. Currently a malicious file server is provided with the names of the files upon upload. Filenames should not be provided to attackers as information can be gleaned from them. To help to more completely protect against malicious file servers filenames must be obscured. 
+
+#### Protection
+
+This threat will be protected through the hashing of the filenames before providing them to the server. We will also add the unencrypted filenames to the metadata of each file that is specified in Threat 6 to keep the functionality of listfiles. On upload and download the hash of the desired filename can be provided to the fileserver which can provide the files stored using those hashes. To maintain the functionality of listfiles the metadata will contain the filename. On the listfiles command the File Server will provide all of the metadata pertaining to the specified group. Which can then be decrypted by the group server which provides the real filenames. The following are diagrams of the new upload download and listfiles protocols. If implementing both T9 and T10 the filename will be stored in the metadata along with the integrity and encryption keys. 
+
+**UPLOAD PROTOCOL**
+* **C** -> **GS** `<request to upload, filename, group>`
+* **GS** checks to see if user is allowed to upload to the group.
+* **GS** -> **C** `<{K, filename}GK, K>`
+* **C** -> **FS** `<{file}K with filename H(filename), {K, filename}GK>`
+
+**DOWNLOAD PROTOCOL**
+* **C** -> **FS** `<request to download H(file)>`
+* **FS** -> **C** `<{file}K, {K, filename}GK>`
+* **C** -> **GS** `<{K, filename}GK||group>`
+* **GS** checks to see if user is allowed to download from the group.
+* **GS** -> **C** `<K>`
+* **C** decrypts file with K
+
+**LISTFILES PROTOCOL**
+* **C** -> **FS** `<request to list files in group g>`
+* **FS** -> **C** `<all metadata for files in group g>`
+* **C** -> **GS** `<metadata group>`
+* **GS** checks to see if user has access to the group.
+* **GS** -> **C** `<filenames>`
+
+#### Argument
+
+This protection will assure the fileserver never has access to the real names of the files that are uploaded to it. The files are uploaded using the hashed filenames using SHA-256. The filenames are safe because SHA-256 has preimage resistance. The filenames are only entrusted to the user and group server which are both trusted. 
 
 
 ### T10 - File Integrity
