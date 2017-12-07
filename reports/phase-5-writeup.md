@@ -98,14 +98,14 @@ The current implementation of the File Servers protects the contents of the file
 This threat will be protected through the hashing of the filenames before providing them to the server. We will also add the unencrypted filenames to the metadata of each file that is specified in Threat 6 to keep the functionality of listfiles. On upload and download the hash of the desired filename can be provided to the fileserver which can provide the files stored using those hashes. To maintain the functionality of listfiles the metadata will contain the filename. On the listfiles command the File Server will provide all of the metadata pertaining to the specified group. Which can then be decrypted by the group server which provides the real filenames. The following are diagrams of the new upload download and listfiles protocols. If implementing both T9 and T10 the filename will be stored in the metadata along with the integrity and encryption keys. 
 
 **UPLOAD PROTOCOL**
-* **C** -> **GS** `<request to upload || filename || group>`
+* **C** -> **GS** `<request to upload, filename, group>`
 * **GS** checks to see if user is allowed to upload to the group.
-* **GS** -> **C** `<{K, filename}GK || K>`
-* **C** -> **FS** `<{file}K with filename H(filename) || {K, filename}GK>`
+* **GS** -> **C** `<{K, filename}GK, K>`
+* **C** -> **FS** `<{file}K with filename H(filename), {K, filename}GK>`
 
 **DOWNLOAD PROTOCOL**
 * **C** -> **FS** `<request to download H(file)>`
-* **FS** -> **C** `<{file}K || {K, filename}GK>`
+* **FS** -> **C** `<{file}K, {K, filename}GK>`
 * **C** -> **GS** `<{K, filename}GK||group>`
 * **GS** checks to see if user is allowed to download from the group.
 * **GS** -> **C** `<K>`
